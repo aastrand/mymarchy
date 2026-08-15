@@ -52,7 +52,12 @@ F_FIREFOX=0.552
 BTOP_MATCH='^dashboard-btop$'
 BTOP_LAUNCH='uwsm app -- kitty --class dashboard-btop -o window_padding_width=0 -o font_size=10 -e btop'
 FIREFOX_MATCH='^firefox$'
-FIREFOX_LAUNCH='uwsm app -- firefox --new-window'
+# Cold start: plain `firefox`, so session restore reopens the previous windows.
+# Adding --new-window to a cold start produces a blank window on top of the
+# restored ones. --new-window is only right when Firefox is already running and
+# a second window is genuinely needed.
+FIREFOX_LAUNCH='uwsm app -- firefox'
+FIREFOX_LAUNCH_EXTRA='uwsm app -- firefox --new-window'
 SPOTIFY_MATCH='^Spotify$'
 SPOTIFY_LAUNCH='uwsm app -- spotify'
 TERM_MATCH='^kitty$'
@@ -175,6 +180,71 @@ geom() {
     '.[] | select(.address == $a) | "\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])"'
 }
 
+# Produce exactly two Firefox windows, one per screen, and echo their addresses.
+#
+# Firefox needs handling of its own because it restores a session. Starting it
+# cold reopens however many windows were last open, so the count cannot be
+# predicted -- and asking for --new-window on a cold start yields a blank window
+# on top of the restored ones, which is the "extra empty Firefox" this used to
+# produce. So: start it plain, let the session settle, then top up only if the
+# restore gave fewer than two.
+ensure_two_firefox() {
+  local n before
+
+  n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+  if (( n == 0 )); then
+    log "firefox not running -- starting it and letting session restore settle"
+    setsid $FIREFOX_LAUNCH >/dev/null 2>&1 &
+    # Wait for the first window...
+    for _ in $(seq 1 120); do
+      sleep 0.25
+      (( $(addrs_matching "$FIREFOX_MATCH" | wc -l) > 0 )) && break
+    done
+    # ...then until the count stops rising, so restored windows are all counted.
+    local last=-1 cur
+    for _ in $(seq 1 40); do
+      cur=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+      [[ $cur == "$last" ]] && break
+      last=$cur
+      sleep 0.5
+    done
+    n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+    log "session restore produced $n window(s)"
+  fi
+
+  while (( n < 2 )); do
+    log "only $n firefox window(s) -- opening another"
+    before=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+    setsid $FIREFOX_LAUNCH_EXTRA >/dev/null 2>&1 &
+    for _ in $(seq 1 80); do
+      sleep 0.25
+      (( $(addrs_matching "$FIREFOX_MATCH" | wc -l) > before )) && break
+    done
+    local now
+    now=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+    if (( now == n )); then
+      log "TIMED OUT opening an extra firefox window"
+      return 1
+    fi
+    n=$now
+  done
+
+  # Prefer whatever is already on each screen, so repeat runs do not shuffle
+  # windows between monitors. Anything unplaced fills the gaps.
+  local on1 on2 rest
+  on1=$(addr_on_ws "$FIREFOX_MATCH" "$MAIN_WS")
+  on2=$(addr_on_ws "$FIREFOX_MATCH" "$WS")
+  rest=$(addrs_matching "$FIREFOX_MATCH" | grep -vx -e "${on1:-__}" -e "${on2:-__}")
+  [[ -z $on1 ]] && { on1=$(echo "$rest" | sed -n 1p); rest=$(echo "$rest" | sed 1d); }
+  [[ -z $on2 ]] && on2=$(echo "$rest" | sed -n 1p)
+
+  if [[ -z $on1 || -z $on2 || $on1 == "$on2" ]]; then
+    log "could not settle on two distinct firefox windows"
+    return 1
+  fi
+  echo "$on1 $on2"
+}
+
 anim 0 false
 
 # --- ultrawide: terminal on the left, Firefox on the right ---------------
@@ -186,8 +256,10 @@ anim 0 false
 dispatch "hl.dsp.focus({ monitor = \"$MAIN_MONITOR\" })"
 dispatch "hl.dsp.focus({ workspace = \"$MAIN_WS\" })"
 
-TERM_W=$(ensure "$TERM_MATCH"    "$TERM_LAUNCH"    "$MAIN_WS" new) || exit 1
-FF_MAIN=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH" "$MAIN_WS" new) || exit 1
+read -r FF_MAIN FIREFOX <<<"$(ensure_two_firefox)" || exit 1
+[[ -n ${FF_MAIN:-} && -n ${FIREFOX:-} ]] || { log "ABORT: no firefox pair"; exit 1; }
+
+TERM_W=$(ensure "$TERM_MATCH" "$TERM_LAUNCH" "$MAIN_WS" new) || exit 1
 for a in "$TERM_W" "$FF_MAIN"; do
   [[ $(ws_of "$a") == "$MAIN_WS" ]] || {
     dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$MAIN_WS\", follow = false })"
@@ -200,13 +272,8 @@ dispatch "hl.dsp.focus({ monitor = \"$MONITOR\" })"
 dispatch "hl.dsp.focus({ workspace = \"$WS\" })"
 
 BTOP=$(ensure    "$BTOP_MATCH"    "$BTOP_LAUNCH"    "$WS" move) || exit 1
-FIREFOX=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH" "$WS" new)  || exit 1
 SPOTIFY=$(ensure "$SPOTIFY_MATCH" "$SPOTIFY_LAUNCH" "$WS" move) || exit 1
-
-if [[ $FIREFOX == "$FF_MAIN" ]]; then
-  log "ABORT: the same Firefox window was chosen for both screens"
-  exit 1
-fi
+# FIREFOX was chosen by ensure_two_firefox alongside FF_MAIN.
 
 # --- portrait: clear anything else out of the way ------------------------
 # The dashboard is an exact three-pane layout, so any other *tiled* window on

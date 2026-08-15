@@ -76,7 +76,6 @@ lazygit
 less
 lib32-nvidia-utils
 libpulse
-libreoffice-fresh
 libva-nvidia-driver
 libvips
 libyaml
