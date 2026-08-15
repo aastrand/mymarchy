@@ -5,3 +5,8 @@
 # Editor/OS noise
 *.swp
 .DS_Store
+
+# Never track the Windows VM compose: Omarchy writes the account password
+# into it inline and regenerates it on every reinstall.
+docker-compose.yml
+.env

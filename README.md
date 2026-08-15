@@ -108,6 +108,44 @@ and re-applies settings on boot and after resume, which is why the Ubuntu-era
   45 °C→100%.
 - `nzxt_kraken3` is **not** blacklisted; it does not block control.
 
+## Manual steps, not captured as files
+
+Some settings deliberately are not tracked, either because the file is
+machine-specific or because it holds a secret. Reproduce these by hand on a
+rebuild.
+
+**Wake-on-LAN.** Lives in the NetworkManager connection profile as
+`wake-on-lan=64` (`0x40` = MAGIC). The profile is not tracked because it carries
+a machine-specific UUID and MAC binding, the same reason `fstab` is
+reference-only. The tracked udev rule only permits PCI wake events — without
+this the NIC is never armed and Wake-on-LAN silently does nothing:
+
+```bash
+nmcli connection modify "Wired connection 1" 802-3-ethernet.wake-on-lan magic
+# verify
+ethtool eno1 | grep -i wake-on          # expect: Wake-on: g
+```
+
+BIOS needs `Power On By PCI-E` enabled and `ErP Ready` disabled. On this
+machine they already are — Wake-on-LAN worked under Ubuntu on the same
+hardware.
+
+**Windows VM.** `~/.config/windows/docker-compose.yml` is not tracked: Omarchy's
+installer writes the account password into it inline, and it is regenerated
+world-readable on every reinstall. Set it to `600` after any reinstall. Current
+shape:
+
+```
+VERSION 11 · RAM_SIZE 16G · CPU_CORES 2 · DISK_SIZE 64G · TZ Europe/Stockholm
+```
+
+VM data in `~/.windows`, shared folder `~/Windows`, ports bound to localhost
+only (`8006` noVNC, `3389` RDP). Prefer RDP over noVNC for real use:
+
+```bash
+xfreerdp3 /v:127.0.0.1:3389 /u:anders /dynamic-resolution /sound /clipboard
+```
+
 ## History
 
 The Ubuntu-era `dotfiles` and `scripts` repos in `~/Documents/code/` are
