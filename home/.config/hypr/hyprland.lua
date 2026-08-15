@@ -28,6 +28,13 @@ require("default.hypr.toggles")
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
 
+-- Pin workspaces to monitors. Without this a workspace lives on whichever
+-- monitor was focused when it was created, so workspace 2 is only on the
+-- portrait screen by accident and could migrate. The portrait dashboard
+-- layout targets workspace 2 by name, so it needs to stay put.
+hl.workspace_rule({ workspace = "1", monitor = "DP-1", default = true })
+hl.workspace_rule({ workspace = "2", monitor = "DP-2", default = true })
+
 -- krengine: always float.
 -- Matched on title because the app sets no class at all -- both class and
 -- initialClass are empty strings -- so there is nothing else to match on.

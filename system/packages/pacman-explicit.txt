@@ -43,6 +43,7 @@ fd
 ffmpegthumbnailer
 firefox
 foot
+freerdp
 fzf
 git
 gnome-disk-utility
@@ -113,6 +114,7 @@ omarchy-keyring
 omarchy-nvim
 omarchy-settings
 omawrite
+openbsd-netcat
 openrgb
 pacman-contrib
 pamixer

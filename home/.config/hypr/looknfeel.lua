@@ -30,6 +30,28 @@ hl.config({
   },
 })
 
+-- Dwindle picks its split axis by comparing width * multiplier against
+-- height, so this one global knob has to serve a 3440x1440 ultrawide and a
+-- 1440x2560 portrait screen at once. Their shapes are far enough apart that
+-- a single value works for both:
+--
+--   DP-1 1st split   3440 * 0.85 = 2924 > 1440   side by side
+--   DP-1 2nd split   1720 * 0.85 = 1462 > 1440   side by side
+--   DP-2 1st split   1440 * 0.85 = 1224 < 2560   stacked
+--   DP-2 2nd split   1440 * 0.85 = 1224 < 1280   stacked   <- the fix
+--
+-- At Hyprland's default of 1.0 that last case comes out 1440 > 1280 and
+-- splits side by side, turning two full-width panes on the portrait screen
+-- into 720px columns.
+--
+-- The ultrawide's second split clears by only 1.5%, so revisit this if
+-- either monitor's resolution changes.
+hl.config({
+  dwindle = {
+    split_width_multiplier = 0.85,
+  },
+})
+
 -- hl.config({
 --   decoration = {
 --     -- Dim unfocused windows (0.0 = no dim, 1.0 = fully dimmed).
