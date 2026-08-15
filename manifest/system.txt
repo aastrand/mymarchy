@@ -1,3 +1,4 @@
 # Root-owned files, copied into system/ by bin/capture.
 # These are NEVER symlinked and NEVER auto-restored by bin/apply.
 /etc/coolercontrol/config.toml
+/etc/udev/rules.d/99-wol-rtl8125.rules

@@ -31,6 +31,7 @@ dosfstools
 dotnet-runtime
 dua-cli
 efibootmgr
+ethtool
 evince
 exfatprogs
 expac

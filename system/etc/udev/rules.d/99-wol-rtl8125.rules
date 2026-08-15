@@ -1,0 +1,15 @@
+# Allow the onboard Realtek RTL8125 2.5GbE NIC to generate PCI wake events.
+#
+# Wake-on-LAN needs three separate things, and this covers only one of them:
+#
+#   1. The NIC armed with the magic-packet flag. NetworkManager does this via
+#      802-3-ethernet.wake-on-lan=magic on the connection profile.
+#   2. The PCI device permitted to raise wake events -- this file. The kernel
+#      defaults it to "disabled" on every boot, so it has to be set by rule.
+#   3. The firmware configured to power the slot in S5 and act on the event.
+#      That is a BIOS setting and cannot be set from Linux.
+#
+# Matched by PCI vendor:device rather than by bus address, because NVMe/PCIe
+# enumeration order on this board has already been seen to shift between
+# boots (/mnt/storage moved from nvme1n1p4 to nvme2n1p4).
+ACTION=="add|change", SUBSYSTEM=="pci", ATTR{vendor}=="0x10ec", ATTR{device}=="0x8125", ATTR{power/wakeup}="enabled"
