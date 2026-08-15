@@ -1,72 +1,73 @@
 #!/bin/bash
-# Build the portrait-monitor dashboard: btop on top, Firefox in the middle,
-# Spotify at the bottom, tiled (not floating) on workspace 2 / DP-2.
+# Restore the desktop: a terminal and Firefox side by side on the ultrawide
+# (ws1 / DP-1), and btop / Firefox / Spotify stacked on the portrait screen
+# (ws2 / DP-2). Tiled throughout, not floating.
 #
 # Replaces the Ubuntu-era restore_desktop.sh, which placed windows at absolute
-# pixel coordinates via wmctrl and the GNOME Window Calls extension. GNOME is a
-# floating WM so that was the only option there; here the windows stay properly
-# tiled, so a fourth window still tiles sensibly, closing one reflows the rest,
-# and the usual focus/swap bindings keep working.
+# pixel coordinates via wmctrl and the GNOME Window Calls extension -- GNOME is
+# a floating WM, so that was the only option there. Here the windows stay
+# genuinely tiled: a fourth window still tiles, closing one reflows the rest,
+# and focus/swap bindings keep working.
 #
-# The tree is rebuilt from scratch each run rather than nudged into shape,
-# because dwindle's layout depends entirely on insertion order. Windows are
-# parked on a special workspace, then reinserted one at a time with focus set
-# so each split lands where it should:
+# Portrait stack, rebuilt from scratch each run because dwindle's layout is
+# decided entirely by insertion order. Windows are parked on a special
+# workspace, then reinserted one at a time with focus set so each split lands
+# where it should:
 #
 #     root
-#     |-- btop      20%
+#     |-- btop     19.5%
 #     `-- node
-#         |-- firefox  57%
-#         `-- spotify  23%
+#         |-- firefox  55.2%
+#         `-- spotify  24.2%
 #
 # NOTE ON SYNTAX: Omarchy configures Hyprland in Lua, which replaces the legacy
-# `hyprctl dispatch <name> <args>` form. Passing legacy syntax fails with
-# "')' expected near ..." and exit 7. Dispatchers must be written as Lua, e.g.
+# `hyprctl dispatch <name> <args>` form. Legacy calls fail with "')' expected
+# near ..." and exit 7. Dispatchers must be written as Lua, e.g.
 #   hyprctl dispatch 'hl.dsp.window.move({ window = "address:0x1", workspace = "2" })'
-# Introspect the API with (hyprctl eval cannot return values, so write a file):
+# hyprctl eval cannot return values, so introspect the API by writing a file:
 #   hyprctl eval "local f=io.open('/tmp/o','w')
 #                 for k,v in pairs(hl.dsp.window) do f:write(k..'\n') end f:close()"
 
 set -uo pipefail
 
+MAIN_WS=1
+MAIN_MONITOR=DP-1
 WS=2
 MONITOR=DP-2
 PARK="special:dashboard-build"
 
-# Fractions of usable height, top to bottom. Spotify takes the remainder.
-# Measured from the layout after adjusting the splits by hand, rather than
-# guessed: 489 / 1385 / 608 px of a 2510px usable height.
+# Fractions of usable height on the portrait screen, top to bottom. Spotify
+# takes the remainder. Measured from the layout after adjusting the splits by
+# hand rather than guessed: 489 / 1385 / 608 px of 2510px usable.
 F_BTOP=0.195
 F_FIREFOX=0.552
 
 # btop runs in a plain terminal under its own class rather than through
 # omarchy-launch-or-focus-tui. That helper uses the app-id org.omarchy.btop,
-# which Omarchy tags "+floating-window" (float, centred, 875x600) because it is
-# meant to be the transient SUPER+CTRL+T overlay. A floating window cannot join
-# a tiled stack, so it needs a class outside that rule.
-#
-# window_padding_width is overridden to 0 and the font shrunk for this window
-# only: the pane is 20% of the screen, and kitty's usual 14px padding costs
-# 28px vertically -- about one text row -- which is exactly enough to put btop
-# under its 24-row minimum ("Terminal size too small").
+# which Omarchy tags "+floating-window" (float, centred, 875x600) for the
+# transient SUPER+CTRL+T overlay, and a floating window cannot join a tiled
+# stack. Padding is also zeroed and the font shrunk: kitty's usual 14px padding
+# costs 28px vertically -- about one text row -- which is enough to put btop
+# under its 24-row minimum in a pane this short.
 BTOP_MATCH='^dashboard-btop$'
 BTOP_LAUNCH='uwsm app -- kitty --class dashboard-btop -o window_padding_width=0 -o font_size=10 -e btop'
 FIREFOX_MATCH='^firefox$'
-FIREFOX_LAUNCH='uwsm app -- firefox'
+FIREFOX_LAUNCH='uwsm app -- firefox --new-window'
 SPOTIFY_MATCH='^Spotify$'
 SPOTIFY_LAUNCH='uwsm app -- spotify'
+TERM_MATCH='^kitty$'
+TERM_LAUNCH='uwsm app -- kitty'
 
 log() { printf '  %s\n' "$*" >&2; }
 
-# Animations make every move play a transition, which is both the visible
-# churn during a rebuild and a real part of the wall-clock cost. Suppress them
-# for the duration and restore on any exit, including failure.
+# Animations make every move play a transition, which is both the visible churn
+# during a rebuild and a real part of the wall-clock cost. Suppress them for the
+# duration and restore on any exit, including failure.
 anim() { hyprctl keyword animations:enabled "$1" >/dev/null 2>&1 ||
          hyprctl eval "hl.config({ animations = { enabled = $2 } })" >/dev/null 2>&1; }
 restore_anim() { anim 1 true; }
 trap restore_anim EXIT INT TERM
 
-# Run a Lua dispatcher, reporting failure instead of hiding it.
 dispatch() {
   local lua=$1 out
   out=$(hyprctl dispatch "$lua" 2>&1)
@@ -77,13 +78,8 @@ dispatch() {
   fi
 }
 
-# First matching window already on the target workspace.
-#
-# Scoped to the workspace on purpose: these apps legitimately have more than one
-# window -- there is a Firefox on the ultrawide too -- and a global "first
-# match" would drag the wrong one onto the portrait screen.
 addr_on_ws() {
-  hyprctl clients -j | jq -r --arg re "$1" --argjson ws "$WS" \
+  hyprctl clients -j | jq -r --arg re "$1" --argjson ws "$2" \
     'map(select((.class | test($re)) and .workspace.id == $ws))
      | if length > 0 then .[0].address else "" end'
 }
@@ -92,49 +88,13 @@ addrs_matching() {
   hyprctl clients -j | jq -r --arg re "$1" '.[] | select(.class | test($re)) | .address'
 }
 
-# Ensure a window for $1 exists, launching $2 only if the app is not running at
-# all -- matching restore_desktop.sh, whose launch() only ran a process when
-# pgrep found nothing and whose move() did the rest.
-ensure() {
-  local re=$1 cmd=$2 a before after
-  a=$(addr_on_ws "$re")
-  if [[ -n $a ]]; then
-    log "reusing window on ws$WS: $re"
-    echo "$a"; return 0
-  fi
-
-  a=$(addrs_matching "$re" | head -1)
-  if [[ -n $a ]]; then
-    log "moving existing window onto ws$WS: $re"
-    echo "$a"; return 0
-  fi
-
-  before=$(addrs_matching "$re" | sort)
-  log "launching: $cmd"
-  setsid $cmd >/dev/null 2>&1 &
-
-  for _ in $(seq 1 80); do
-    sleep 0.25
-    after=$(addrs_matching "$re" | sort)
-    a=$(comm -13 <(echo "$before") <(echo "$after") | head -1)
-    [[ -n $a ]] && { echo "$a"; return 0; }
-  done
-  log "TIMED OUT waiting for a new $re window"
-  return 1
-}
-
-geom() {
-  hyprctl clients -j | jq -r --arg a "$1" \
-    '.[] | select(.address == $a) | "\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])"'
-}
-
 ws_of() {
   hyprctl clients -j | jq -r --arg a "$1" '.[] | select(.address == $a) | .workspace.id'
 }
 
-# Poll until window $1 reports being on workspace $2, up to ~2s. Waiting for
-# the state we actually want beats sleeping a fixed guess: it is correct when
-# Hyprland is slow and instant when it is not.
+# Poll until window $1 is on workspace $2. Waiting for the state actually
+# wanted beats sleeping a fixed guess: it returns the moment it is true, and
+# waits longer when the machine is busy instead of racing.
 wait_ws() {
   local a=$1 want=$2
   for _ in $(seq 1 40); do
@@ -144,8 +104,8 @@ wait_ws() {
   return 1
 }
 
-# Same, but by workspace *name*. Special workspaces get an allocated negative
-# id that is not predictable, so parking has to be waited on by name.
+# Same, but by workspace *name*. Special workspaces are allocated an
+# unpredictable negative id, so parking has to be waited on by name.
 wait_ws_name() {
   local a=$1 want=$2 cur
   for _ in $(seq 1 40); do
@@ -167,15 +127,102 @@ wait_settled() {
   done
 }
 
-# --- gather -------------------------------------------------------------
-log "gathering windows"
-BTOP=$(ensure "$BTOP_MATCH" "$BTOP_LAUNCH")          || exit 1
-FIREFOX=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH") || exit 1
-SPOTIFY=$(ensure "$SPOTIFY_MATCH" "$SPOTIFY_LAUNCH") || exit 1
+# Ensure workspace $3 has a window matching $1, launching $2 if not.
+#
+# $4 decides what to do when the app is running but its window is elsewhere:
+#
+#   move  - claim that window (single-window apps: Spotify, btop). This is what
+#           restore_desktop.sh did throughout -- launch() only ran a process
+#           when pgrep found nothing, and move() did the rest.
+#   new   - leave it alone and open another window (Firefox, terminals). These
+#           legitimately have one window per screen, and claiming an existing
+#           one would drag the ultrawide's browser onto the portrait monitor.
+#
+# When launching, waits for an address that did not exist beforehand, so
+# another window of the same app is never mistaken for the new one.
+ensure() {
+  local re=$1 cmd=$2 ws=$3 policy=$4 a before after
+  a=$(addr_on_ws "$re" "$ws")
+  if [[ -n $a ]]; then
+    log "ws$ws: reusing $re"
+    echo "$a"; return 0
+  fi
 
-# --- rebuild the tree in insertion order --------------------------------
+  if [[ $policy == move ]]; then
+    a=$(addrs_matching "$re" | head -1)
+    if [[ -n $a ]]; then
+      log "ws$ws: claiming existing $re"
+      echo "$a"; return 0
+    fi
+  fi
+
+  before=$(addrs_matching "$re" | sort)
+  log "ws$ws: launching $cmd"
+  setsid $cmd >/dev/null 2>&1 &
+
+  for _ in $(seq 1 100); do
+    sleep 0.1
+    after=$(addrs_matching "$re" | sort)
+    a=$(comm -13 <(echo "$before") <(echo "$after") | head -1)
+    [[ -n $a ]] && { echo "$a"; return 0; }
+  done
+  log "TIMED OUT waiting for a new $re window"
+  return 1
+}
+
+geom() {
+  hyprctl clients -j | jq -r --arg a "$1" \
+    '.[] | select(.address == $a) | "\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])"'
+}
+
 anim 0 false
 
+# --- ultrawide: terminal on the left, Firefox on the right ---------------
+# Only presence is ensured here, not order -- this workspace usually already
+# has real work in it, and rebuilding its tree would shuffle windows that are
+# perfectly fine where they are. On an empty workspace, launching the terminal
+# first and Firefox second lands them left and right anyway, since force_split
+# puts each new window in the right/bottom slot.
+dispatch "hl.dsp.focus({ monitor = \"$MAIN_MONITOR\" })"
+dispatch "hl.dsp.focus({ workspace = \"$MAIN_WS\" })"
+
+TERM_W=$(ensure "$TERM_MATCH"    "$TERM_LAUNCH"    "$MAIN_WS" new) || exit 1
+FF_MAIN=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH" "$MAIN_WS" new) || exit 1
+for a in "$TERM_W" "$FF_MAIN"; do
+  [[ $(ws_of "$a") == "$MAIN_WS" ]] || {
+    dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$MAIN_WS\", follow = false })"
+    wait_ws "$a" "$MAIN_WS"
+  }
+done
+
+# --- portrait: gather ----------------------------------------------------
+dispatch "hl.dsp.focus({ monitor = \"$MONITOR\" })"
+dispatch "hl.dsp.focus({ workspace = \"$WS\" })"
+
+BTOP=$(ensure    "$BTOP_MATCH"    "$BTOP_LAUNCH"    "$WS" move) || exit 1
+FIREFOX=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH" "$WS" new)  || exit 1
+SPOTIFY=$(ensure "$SPOTIFY_MATCH" "$SPOTIFY_LAUNCH" "$WS" move) || exit 1
+
+if [[ $FIREFOX == "$FF_MAIN" ]]; then
+  log "ABORT: the same Firefox window was chosen for both screens"
+  exit 1
+fi
+
+# --- portrait: clear anything else out of the way ------------------------
+# The dashboard is an exact three-pane layout, so any other *tiled* window on
+# this workspace would take space in the tree and throw the proportions out.
+# They are moved to the ultrawide rather than parked, so nothing disappears.
+# Floating windows are left alone: they sit above the tiling and cost nothing.
+for a in $(hyprctl clients -j | jq -r --argjson ws "$WS" \
+             '.[] | select(.workspace.id == $ws and .floating == false) | .address'); do
+  case $a in "$BTOP"|"$FIREFOX"|"$SPOTIFY") continue ;; esac
+  cls=$(hyprctl clients -j | jq -r --arg a "$a" '.[] | select(.address==$a) | .class // .title')
+  log "moving unrelated window off ws$WS -> ws$MAIN_WS: ${cls:-unknown}"
+  dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$MAIN_WS\", follow = false })"
+  wait_ws "$a" "$MAIN_WS"
+done
+
+# --- portrait: rebuild the tree in insertion order -----------------------
 log "parking windows"
 for a in "$BTOP" "$FIREFOX" "$SPOTIFY"; do
   dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$PARK\", follow = false })" || exit 1
@@ -214,7 +261,7 @@ for pair in "firefox:$FIREFOX" "spotify:$SPOTIFY"; do
   fi
 done
 
-# --- refuse to size a layout that did not come out right -----------------
+# --- refuse to size a layout that did not assemble ------------------------
 for pair in "btop:$BTOP" "firefox:$FIREFOX" "spotify:$SPOTIFY"; do
   name=${pair%%:*}; a=${pair#*:}
   on=$(ws_of "$a")
@@ -241,6 +288,7 @@ wait_settled "$FIREFOX"
 dispatch "hl.dsp.focus({ window = \"address:$FIREFOX\" })"
 
 log "final layout:"
-hyprctl clients -j | jq -r --argjson ws "$WS" \
-  '.[] | select(.workspace.id == $ws) | "    y=\(.at[1])\th=\(.size[1])\tw=\(.size[0])\t\(.class)"' \
-  | sort -n >&2
+hyprctl clients -j | jq -r \
+  '[.[] | select(.workspace.id == 1 or .workspace.id == 2)]
+   | sort_by(.workspace.id, .at[1])[]
+   | "    ws\(.workspace.id)  y=\(.at[1])\th=\(.size[1])\tw=\(.size[0])\t\(.class)"' >&2

@@ -35,9 +35,9 @@ require("default.hypr.toggles")
 hl.workspace_rule({ workspace = "1", monitor = "DP-1", default = true })
 hl.workspace_rule({ workspace = "2", monitor = "DP-2", default = true })
 
--- krengine: always float.
--- Matched on title because the app sets no class at all -- both class and
--- initialClass are empty strings -- so there is nothing else to match on.
--- This is more brittle than a class match: if krengine ever puts a filename
--- or status in its title, the rule stops matching and it will tile again.
-o.window({ title = "^krengine$" }, { float = true })
+-- krankulator (formerly krengine): always float.
+-- Matched on class. An earlier version matched the title, because the app set
+-- no class at all, and that broke as soon as it started appending the loaded
+-- ROM ("krankulator — Megaman II (U) [!]"). Now that it sets an app_id, the
+-- class is stable regardless of title.
+o.window("^krankulator$", { float = true })
