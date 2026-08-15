@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# capture — copy live system state INTO this repo.
+#
+# Run this after changing any tracked config, so the repo reflects reality.
+# Safe to run any time; it only writes inside the repo.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+manifest_lines() { grep -vE '^\s*(#|$)' "$1" 2>/dev/null || true; }
+
+echo "==> $HOME files"
+while IFS= read -r rel; do
+  src="$HOME/$rel"
+  dst="$REPO/home/$rel"
+  if [[ -e "$src" ]]; then
+    mkdir -p "$(dirname "$dst")"
+    cp -a "$src" "$dst"
+    echo "    $rel"
+  else
+    echo "    MISSING: $rel" >&2
+  fi
+done < <(manifest_lines manifest/home.txt)
+
+echo "==> root-owned files"
+while IFS= read -r abs; do
+  dst="$REPO/system${abs}"
+  if [[ -r "$abs" ]]; then
+    mkdir -p "$(dirname "$dst")"
+    cp "$abs" "$dst"
+    echo "    $abs"
+  else
+    echo "    UNREADABLE (needs root?): $abs" >&2
+  fi
+done < <(manifest_lines manifest/system.txt)
+
+echo "==> package manifests"
+pacman -Qqen > system/packages/pacman-explicit.txt   # official repos, explicitly installed
+pacman -Qqem > system/packages/aur-explicit.txt      # foreign/AUR, explicitly installed
+echo "    $(wc -l < system/packages/pacman-explicit.txt) official, $(wc -l < system/packages/aur-explicit.txt) AUR"
+
+echo "==> enabled systemd units"
+systemctl list-unit-files --state=enabled --no-pager --no-legend \
+  | awk '{print $1}' | sort > system/systemd/enabled-units.txt
+systemctl --user list-unit-files --state=enabled --no-pager --no-legend 2>/dev/null \
+  | awk '{print $1}' | sort > system/systemd/enabled-units-user.txt
+echo "    $(wc -l < system/systemd/enabled-units.txt) system, $(wc -l < system/systemd/enabled-units-user.txt) user"
+
+echo "==> fstab (reference only — never restored automatically)"
+cp /etc/fstab system/etc/fstab.reference
+
+echo
+echo "Done. Review with: git -C '$REPO' diff"

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# check — report drift between the live system and this repo.
+#
+# Exits 0 if clean, 1 if anything drifted. Run it before trusting the repo,
+# or after an `omarchy update`.
+set -uo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+drift=0
+manifest_lines() { grep -vE '^\s*(#|$)' "$1" 2>/dev/null || true; }
+
+echo "==> tracked files: live vs repo"
+while IFS= read -r rel; do
+  live="$HOME/$rel"; stored="$REPO/home/$rel"
+  if [[ ! -e "$live" ]]; then
+    echo "  GONE     $rel (missing on the live system)"; drift=1
+  elif [[ ! -e "$stored" ]]; then
+    echo "  UNSAVED  $rel (not yet captured)"; drift=1
+  elif ! diff -q "$stored" "$live" >/dev/null 2>&1; then
+    echo "  DRIFTED  $rel"; drift=1
+  fi
+done < <(manifest_lines manifest/home.txt)
+
+while IFS= read -r abs; do
+  stored="$REPO/system${abs}"
+  if [[ -r "$abs" ]] && [[ -e "$stored" ]] && ! diff -q "$stored" "$abs" >/dev/null 2>&1; then
+    echo "  DRIFTED  $abs"; drift=1
+  fi
+done < <(manifest_lines manifest/system.txt)
+
+# The governing rule: a tracked file must actually differ from Omarchy's
+# default, otherwise it is dead weight that blocks upstream improvements.
+echo "==> tracked files that no longer differ from Omarchy defaults"
+while IFS= read -r rel; do
+  case "$rel" in
+    .config/*) def="/usr/share/omarchy/config/${rel#.config/}" ;;
+    *) continue ;;
+  esac
+  if [[ -e "$def" && -e "$HOME/$rel" ]] && diff -q "$def" "$HOME/$rel" >/dev/null 2>&1; then
+    echo "  REDUNDANT $rel — matches the default, consider untracking"; drift=1
+  fi
+done < <(manifest_lines manifest/home.txt)
+
+echo
+if (( drift )); then
+  echo "Drift found. Run bin/capture to sync the repo."
+else
+  echo "Clean — repo matches the live system."
+fi
+exit $drift

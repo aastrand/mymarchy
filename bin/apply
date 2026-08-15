@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# apply — restore this repo ONTO a machine.
+#
+# Intended for a fresh Omarchy install. It backs up anything it overwrites.
+# Root-owned files under system/ are NOT written automatically; they are
+# reported so you can place them deliberately.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO"
+
+DRY=0
+[[ "${1:-}" == "--dry-run" ]] && DRY=1
+
+manifest_lines() { grep -vE '^\s*(#|$)' "$1" 2>/dev/null || true; }
+stamp="$(date +%s)"
+
+echo "==> restoring \$HOME files$([[ $DRY == 1 ]] && echo ' (dry run)')"
+while IFS= read -r rel; do
+  src="$REPO/home/$rel"; dst="$HOME/$rel"
+  [[ -e "$src" ]] || { echo "    SKIP (not in repo): $rel" >&2; continue; }
+  if [[ -e "$dst" ]] && diff -q "$src" "$dst" >/dev/null 2>&1; then
+    echo "    same: $rel"; continue
+  fi
+  if (( DRY )); then
+    echo "    would write: $rel"
+  else
+    mkdir -p "$(dirname "$dst")"
+    [[ -e "$dst" ]] && cp -a "$dst" "$dst.bak.$stamp"
+    cp -a "$src" "$dst"
+    echo "    wrote: $rel"
+  fi
+done < <(manifest_lines manifest/home.txt)
+
+cat <<'NOTE'
+
+==> manual steps (deliberately not automated)
+
+  1. Packages:
+       pacman -S --needed - < system/packages/pacman-explicit.txt
+       yay    -S --needed - < system/packages/aur-explicit.txt
+
+  2. Root-owned config — copy by hand, then restart the owning service:
+       sudo cp system/etc/coolercontrol/config.toml /etc/coolercontrol/
+       sudo systemctl restart coolercontrold
+
+  3. Services — compare against system/systemd/enabled-units.txt and
+     enable what this machine actually needs.
+
+  4. fstab — system/etc/fstab.reference is REFERENCE ONLY. Never copy it
+     onto a new machine; the UUIDs belong to different disks.
+
+  5. Reload Hyprland:
+       hyprctl reload && hyprctl configerrors
+NOTE

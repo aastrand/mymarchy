@@ -1,0 +1,7 @@
+# Backup files left behind by agents and by bin/apply
+*.bak
+*.bak.*
+
+# Editor/OS noise
+*.swp
+.DS_Store

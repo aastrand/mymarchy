@@ -1,0 +1,31 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/mapper/root
+UUID=34f65fc2-e35f-4f92-a1f1-e1b6c7e3fdce	/         	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@	0 0
+
+# /dev/mapper/root
+UUID=34f65fc2-e35f-4f92-a1f1-e1b6c7e3fdce	/home     	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@home	0 0
+
+# /dev/mapper/root
+UUID=34f65fc2-e35f-4f92-a1f1-e1b6c7e3fdce	/var/cache/pacman/pkg	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@pkg	0 0
+
+# /dev/mapper/root
+UUID=34f65fc2-e35f-4f92-a1f1-e1b6c7e3fdce	/var/log  	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@log	0 0
+
+# /dev/nvme2n1p1
+UUID=F994-F21D      	/boot     	vfat      	rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro	0 2
+
+
+# Btrfs swapfile for system hibernation
+/swap/swapfile none swap defaults,pri=0 0 0
+
+# Windows system partition
+UUID=3064C83664C80118 /mnt/windows ntfs3 rw,uid=1000,gid=1000,umask=022,windows_names,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 0
+
+# Shared NTFS storage
+UUID=B6789A9C789A5AC7 /mnt/storage ntfs3 rw,uid=1000,gid=1000,umask=022,windows_names,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 0
+
+# Ubuntu root filesystem
+UUID=b928b8bb-aa69-4160-b976-5492ee4390f4 /mnt/ubuntu ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
