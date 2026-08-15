@@ -35,6 +35,12 @@
           "id": "omarchy.tray"
         },
         {
+          "id": "omarchy.tailscale",
+          "recentMullvadRegions": [
+            "Sweden\nStockholm"
+          ]
+        },
+        {
           "id": "omarchy.agents"
         },
         {

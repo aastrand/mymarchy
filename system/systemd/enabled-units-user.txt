@@ -6,6 +6,7 @@ omarchy-fcitx5.service
 omarchy-migrate-notify.service
 omarchy-recover-internal-monitor.service
 omarchy-sleep-lock.service
+omarchy-tailscale-receive.service
 p11-kit-server.socket
 pipewire-pulse.service
 pipewire-pulse.socket

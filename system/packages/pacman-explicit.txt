@@ -141,6 +141,7 @@ starship
 sudo
 sushi
 system-config-printer
+tailscale
 tensaku
 tesseract
 tesseract-data-eng
