@@ -3,6 +3,7 @@
 # /usr/share/omarchy/config/. Run bin/check to verify.
 .config/hypr/monitors.lua
 .config/hypr/looknfeel.lua
+.config/hypr/input.lua
 .config/kitty/kitty.conf
 .config/omarchy/shell.json
 .config/git/config

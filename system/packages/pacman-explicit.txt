@@ -133,6 +133,7 @@ ruby
 sddm
 slurp
 socat
+spotify
 starship
 sudo
 sushi
