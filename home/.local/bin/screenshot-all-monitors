@@ -1,0 +1,26 @@
+#!/bin/bash
+# Screenshot every monitor in one image.
+#
+# omarchy-capture-screenshot always passes grim a -g region, so even its
+# "fullscreen" mode captures a single monitor. grim with no -g captures the
+# whole layout instead.
+#
+# The result is the bounding box of the layout, so it includes dead space where
+# the monitors do not line up -- here the ultrawide sits vertically centred
+# against the portrait screen, leaving bands above and below it.
+set -euo pipefail
+
+DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$DIR"
+FILE="$DIR/screenshot-all-$(date +%Y%m%d-%H%M%S).png"
+
+grim "$FILE"
+
+# Put it on the clipboard too, so it can be pasted straight into a chat.
+wl-copy --type image/png < "$FILE" 2>/dev/null || true
+
+if command -v omarchy-notification-send >/dev/null 2>&1; then
+  omarchy-notification-send -g "" "Screenshot" "All monitors -> $(basename "$FILE")"
+fi
+
+echo "$FILE"

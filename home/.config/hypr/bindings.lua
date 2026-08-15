@@ -33,6 +33,12 @@ o.bind("SHIFT + ALT + X", "Portrait dashboard", "portrait-dashboard")
 hl.unbind("SUPER + SHIFT + S")
 o.bind("SUPER + SHIFT + S", "Screenshot region", "omarchy-capture-screenshot region")
 
+-- PRINT: capture both monitors in one image. Omarchy binds it to
+-- omarchy-capture-screenshot, whose "fullscreen" mode still only covers the
+-- focused monitor, because it always passes grim a -g region.
+hl.unbind("PRINT")
+o.bind("PRINT", "Screenshot all monitors", "screenshot-all-monitors")
+
 -- Logitech MX Keys examples:
 -- o.bind("SUPER + SHIFT + S", nil, "omarchy-capture-screenshot")
 -- o.bind("SUPER + H", nil, "voxtype record toggle")

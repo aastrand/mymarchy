@@ -12,3 +12,4 @@
 .config/hypr/bindings.lua
 .local/bin/portrait-dashboard
 .config/starship.toml
+.local/bin/screenshot-all-monitors
