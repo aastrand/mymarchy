@@ -1,1 +1,2 @@
 coolercontrol
+vmware-workstation

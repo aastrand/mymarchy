@@ -25,3 +25,5 @@ systemd-timesyncd.service
 systemd-userdbd.socket
 tailscaled.service
 ufw.service
+vmware-networks.service
+vmware-usbarbitrator.service

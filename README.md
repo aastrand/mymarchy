@@ -153,6 +153,34 @@ Two things worth carrying over if Dockur is ever retried:
 - The installer defaults to `CPU_CORES: 2`, well below what this machine can
   give it.
 
+**Installing `vmware-workstation`.** It is in `system/packages/aur-explicit.txt`
+and its two services are in `system/systemd/enabled-units.txt`, but neither
+`bin/apply` nor pacman will get it running on its own:
+
+```bash
+yay -S vmware-workstation
+sudo systemctl enable --now vmware-networks vmware-usbarbitrator
+lsmod | grep -E 'vmmon|vmnet'      # expect both loaded
+dkms status | grep vmware          # modules built against the running kernel
+```
+
+The services are what load `vmmon`/`vmnet`; installing the package alone leaves
+them disabled and the modules unloaded.
+
+If the install fails with
+
+```
+error: failed to commit transaction (conflicting files)
+vmware-workstation: /etc/vmware-installer/database exists in filesystem
+```
+
+then a previous attempt left `/etc/vmware-installer/` behind. It is orphaned —
+`pacman -Qo` reports no owner — and pacman refuses to overwrite files it does
+not own. Remove the directory and reinstall; it is only the installer's own
+state database and gets recreated. Answer **N** to yay's "Packages to
+cleanBuild?" prompt: the failure is at pacman's install stage, well after a
+successful compile, so rebuilding wastes time.
+
 ## History
 
 The Ubuntu-era `dotfiles` and `scripts` repos in `~/Documents/code/` are
