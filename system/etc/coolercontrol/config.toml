@@ -16,9 +16,9 @@
 [devices]
 31afea3c316e94c19b918e2e76e98ca246202c76409c1faccfe3b155269f38a9 = "AMD Ryzen 7 7800X3D 8-Core Processor"
 913cdd8b7a02ca478767eb70964b775378b6777ba58a9f75c489d83dadbb2855 = "r8169_0_800:00"
-e20499c5ded3e6ce3ef25b213170c520b76875118819d1790d440cfe2b02f329 = "nvme1"
+e20499c5ded3e6ce3ef25b213170c520b76875118819d1790d440cfe2b02f329 = "nvme2"
 d8a0d82688da79d4d5ae97535c0b13b6b64bd5a0353b53e2e9a7de8e5638b3c8 = "spd5118"
-db3ad2c7b409f37d08c01b97f7a4ddefac47e42bf0afbcdd1796c2cba7d04c74 = "nvme2"
+db3ad2c7b409f37d08c01b97f7a4ddefac47e42bf0afbcdd1796c2cba7d04c74 = "nvme1"
 3ba9ca22a732a540bb2ce835ead8110ec610926fed88574cb2ca14b04d4530ae = "nvme0"
 19e098e312e1b1b39163a343ea22b6ea17f18ec1a803ffe0ce44f5bacd6076ee = "Custom Sensors"
 b5d0cd98cc3ddf4404db72c7f51cd49b3710faef8c51e18437cb0da804bd56f0 = "NVIDIA GeForce RTX 5070 Ti"
@@ -65,14 +65,14 @@ ring = { lighting = { mode = "fixed", colors = [[255, 252, 186]] } }
 fan1 = { profile_uid = "9bdcf0d6-7075-4908-8f2f-dd0e9c1b5ae2" }
 fan2 = { profile_uid = "9bdcf0d6-7075-4908-8f2f-dd0e9c1b5ae2" }
 fan3 = { profile_uid = "9bdcf0d6-7075-4908-8f2f-dd0e9c1b5ae2" }
-led1 = { lighting = { mode = "off", colors = [] } }
-led2 = { lighting = { mode = "off", colors = [] } }
+led1 = { lighting = { mode = "fixed", colors = [[128, 123, 17]] } }
+led2 = { lighting = { mode = "fixed", colors = [[128, 123, 17]] } }
 
 [device-settings.f226946857a3141b80fefa0bae8de91cdba1c6eedf91d96ea7bef76ce88b4e90]
-led2 = { lighting = { mode = "off", colors = [] } }
-led1 = { lighting = { mode = "off", colors = [] } }
-led4 = { lighting = { mode = "off", colors = [] } }
-led3 = { lighting = { mode = "off", colors = [] } }
+led2 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
+led1 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
+led4 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
+led3 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
 
 
 # A list of profiles to be used with each device's settings
