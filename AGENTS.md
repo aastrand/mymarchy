@@ -101,6 +101,24 @@ bin/check            report drift; exits non-zero when out of sync
 - **Fan curves are driven by Kraken liquid temperature, not CPU temperature.**
   Coolant is thermally damped, so fans do not chase momentary CPU spikes.
   Do not "fix" this back to a CPU source.
+- **NVIDIA is left entirely at Omarchy's defaults.** `nvidia-open-dkms` 610.57.04
+  (correct for this Blackwell card), `nvidia_drm modeset=1`, early KMS via
+  mkinitcpio. VRAM preservation is deliberately **not** configured:
+  `NVreg_PreserveVideoMemoryAllocations` is unset and `nvidia-suspend.service` /
+  `nvidia-resume.service` / `nvidia-hibernate.service` are disabled.
+
+  The old Ubuntu install did set all of those (Ubuntu's driver packages do it
+  automatically; Arch leaves it to the user), so it was worth checking — but
+  suspend/resume was tested on 2026-08-15 and works without them. No Xid or
+  RmInit errors; the GPU, both monitors, and cooling all came back.
+
+  Only one non-fatal line appears at resume, an `nvidia_drm` sync-FD semaphore
+  error. Harmless today. **If visual corruption or flicker after resume ever
+  shows up**, that is the thread to pull, and the fix is
+  `/etc/modprobe.d/nvidia-power-management.conf` with
+  `NVreg_PreserveVideoMemoryAllocations=1` plus enabling those three services
+  and rebuilding the initramfs. Do not add it pre-emptively.
+
 - **`/etc/fstab` is reference only.** UUIDs are machine-specific; never restore
   it onto another machine.
 - The old `dotfiles` and `scripts` repos in `~/Documents/code/` are **Ubuntu-era
