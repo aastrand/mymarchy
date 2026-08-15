@@ -1,0 +1,15 @@
+# Vial keyboard access.
+#
+# Vial talks to the board over its raw HID interface, and /dev/hidraw* is
+# root-only by default, so without this the GUI reports "No devices detected".
+#
+# This is Vial's official rule (https://get.vial.today/manual/linux-udev.html).
+# It matches the Vial magic serial rather than a vendor/product id, so it covers
+# any Vial-compatible board -- including a future keyboard -- while still being
+# narrow. Deliberately NOT the Ubuntu approach of granting access to every
+# hidraw device on the system, which also exposed the Logitech receivers, the
+# KEF speakers, and the NZXT controllers.
+#
+# TAG+="uaccess" is what actually does the work: systemd-logind grants an ACL to
+# whoever is logged in at the seat, so no group membership is needed.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
