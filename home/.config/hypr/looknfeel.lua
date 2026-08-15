@@ -18,6 +18,15 @@ hl.config({
   decoration = {
     -- Use round window corners.
     rounding = 8,
+
+    -- Blur what shows through translucent surfaces. This only earns its
+    -- keep alongside real background transparency -- see background_opacity
+    -- in ~/.config/kitty/kitty.conf. Omarchy ships blur disabled.
+    blur = {
+      enabled = true,
+      size = 8,
+      passes = 3,
+    },
   },
 })
 
