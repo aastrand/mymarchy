@@ -28,6 +28,12 @@ require("default.hypr.toggles")
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
 
+-- Keep Omarchy's screenshots in Pictures/Screenshots rather than loose in
+-- Pictures. omarchy-capture-screenshot falls back to XDG_PICTURES_DIR, which is
+-- ~/Pictures, so captures pile up in the root of it alongside everything else.
+-- Absolute path because Hyprland does not expand $HOME in env values.
+hl.env("OMARCHY_SCREENSHOT_DIR", "/home/anders/Pictures/Screenshots")
+
 -- Pin workspaces to monitors. Without this a workspace lives on whichever
 -- monitor was focused when it was created, so workspace 2 is only on the
 -- portrait screen by accident and could migrate. The portrait dashboard
