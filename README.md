@@ -130,21 +130,28 @@ BIOS needs `Power On By PCI-E` enabled and `ErP Ready` disabled. On this
 machine they already are — Wake-on-LAN worked under Ubuntu on the same
 hardware.
 
-**Windows VM.** `~/.config/windows/docker-compose.yml` is not tracked: Omarchy's
-installer writes the account password into it inline, and it is regenerated
-world-readable on every reinstall. Set it to `600` after any reinstall. Current
-shape:
+**Windows VM — using VMware, not Dockur.** The punch list planned to run
+Windows (for MTGO) under Omarchy's Dockur/`dockurr/windows` setup and retire
+VMware. That was tried and abandoned: **the RDP session hung frequently**, which
+is disqualifying for something you sit in for hours. VMware is the choice
+instead.
 
-```
-VERSION 11 · RAM_SIZE 16G · CPU_CORES 2 · DISK_SIZE 64G · TZ Europe/Stockholm
-```
+Do not treat this as an unfinished migration and reinstall Dockur. If it is
+ever revisited, the thing to fix is the RDP hangs, not the installation.
 
-VM data in `~/.windows`, shared folder `~/Windows`, ports bound to localhost
-only (`8006` noVNC, `3389` RDP). Prefer RDP over noVNC for real use:
+Removed: the `omarchy-windows` container, `~/.windows` (the VM disk), and
+`~/.config/windows`. `~/Windows` remains as an empty shared folder.
 
-```bash
-xfreerdp3 /v:127.0.0.1:3389 /u:anders /dynamic-resolution /sound /clipboard
-```
+Two things worth carrying over if Dockur is ever retried:
+
+- Its `docker-compose.yml` holds the Windows account password inline and is
+  regenerated **world-readable** on every reinstall. `chmod 600` it, or move the
+  secret to a `600` `.env` — noting that `docker compose` only reads `.env` from
+  the project directory, so it must be run from `~/.config/windows`. Running it
+  elsewhere resolves `${PASSWORD}` to empty, which produced a Windows account
+  with a blank password and a login that shut down on sight.
+- The installer defaults to `CPU_CORES: 2`, well below what this machine can
+  give it.
 
 ## History
 
