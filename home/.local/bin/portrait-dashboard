@@ -34,8 +34,10 @@ MONITOR=DP-2
 PARK="special:dashboard-build"
 
 # Fractions of usable height, top to bottom. Spotify takes the remainder.
-F_BTOP=0.20
-F_FIREFOX=0.57
+# Measured from the layout after adjusting the splits by hand, rather than
+# guessed: 489 / 1385 / 608 px of a 2510px usable height.
+F_BTOP=0.195
+F_FIREFOX=0.552
 
 # btop runs in a plain terminal under its own class rather than through
 # omarchy-launch-or-focus-tui. That helper uses the app-id org.omarchy.btop,
