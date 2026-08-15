@@ -58,6 +58,14 @@ SPOTIFY_LAUNCH='uwsm app -- spotify'
 
 log() { printf '  %s\n' "$*" >&2; }
 
+# Animations make every move play a transition, which is both the visible
+# churn during a rebuild and a real part of the wall-clock cost. Suppress them
+# for the duration and restore on any exit, including failure.
+anim() { hyprctl keyword animations:enabled "$1" >/dev/null 2>&1 ||
+         hyprctl eval "hl.config({ animations = { enabled = $2 } })" >/dev/null 2>&1; }
+restore_anim() { anim 1 true; }
+trap restore_anim EXIT INT TERM
+
 # Run a Lua dispatcher, reporting failure instead of hiding it.
 dispatch() {
   local lua=$1 out
@@ -124,6 +132,41 @@ ws_of() {
   hyprctl clients -j | jq -r --arg a "$1" '.[] | select(.address == $a) | .workspace.id'
 }
 
+# Poll until window $1 reports being on workspace $2, up to ~2s. Waiting for
+# the state we actually want beats sleeping a fixed guess: it is correct when
+# Hyprland is slow and instant when it is not.
+wait_ws() {
+  local a=$1 want=$2
+  for _ in $(seq 1 40); do
+    [[ $(ws_of "$a") == "$want" ]] && return 0
+    sleep 0.05
+  done
+  return 1
+}
+
+# Same, but by workspace *name*. Special workspaces get an allocated negative
+# id that is not predictable, so parking has to be waited on by name.
+wait_ws_name() {
+  local a=$1 want=$2 cur
+  for _ in $(seq 1 40); do
+    cur=$(hyprctl clients -j | jq -r --arg a "$a" '.[] | select(.address==$a) | .workspace.name')
+    [[ $cur == "$want" ]] && return 0
+    sleep 0.05
+  done
+  return 1
+}
+
+# Poll until window $1's height stops changing, so a resize has settled.
+wait_settled() {
+  local a=$1 last="" cur
+  for _ in $(seq 1 40); do
+    cur=$(hyprctl clients -j | jq -r --arg a "$a" '.[] | select(.address==$a) | .size[1]')
+    [[ -n $cur && $cur == "$last" ]] && return 0
+    last=$cur
+    sleep 0.05
+  done
+}
+
 # --- gather -------------------------------------------------------------
 log "gathering windows"
 BTOP=$(ensure "$BTOP_MATCH" "$BTOP_LAUNCH")          || exit 1
@@ -131,23 +174,25 @@ FIREFOX=$(ensure "$FIREFOX_MATCH" "$FIREFOX_LAUNCH") || exit 1
 SPOTIFY=$(ensure "$SPOTIFY_MATCH" "$SPOTIFY_LAUNCH") || exit 1
 
 # --- rebuild the tree in insertion order --------------------------------
+anim 0 false
+
 log "parking windows"
 for a in "$BTOP" "$FIREFOX" "$SPOTIFY"; do
   dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$PARK\", follow = false })" || exit 1
 done
-sleep 0.5
+for a in "$BTOP" "$FIREFOX" "$SPOTIFY"; do
+  wait_ws_name "$a" "$PARK" || log "warning: window did not reach $PARK"
+done
 
 dispatch "hl.dsp.focus({ monitor = \"$MONITOR\" })"
 dispatch "hl.dsp.focus({ workspace = \"$WS\" })"
-sleep 0.4
 
 insert() {
   local name=$1 a=$2
   log "inserting $name"
   dispatch "hl.dsp.window.move({ window = \"address:$a\", workspace = \"$WS\", follow = false })" || return 1
-  sleep 0.5
+  wait_ws "$a" "$WS" || { log "$name never arrived on ws$WS"; return 1; }
   dispatch "hl.dsp.focus({ window = \"address:$a\" })" || return 1
-  sleep 0.3
 }
 
 insert btop    "$BTOP"    || exit 1
@@ -164,9 +209,8 @@ for pair in "firefox:$FIREFOX" "spotify:$SPOTIFY"; do
   if [[ -n ${w:-} && -n ${BW:-} ]] && (( w < BW * 9 / 10 )); then
     log "$name is narrower than btop -- split went side by side, correcting"
     dispatch "hl.dsp.focus({ window = \"address:$a\" })"
-    sleep 0.2
     dispatch 'hl.dsp.layout("togglesplit")'
-    sleep 0.4
+    wait_settled "$a"
   fi
 done
 
@@ -190,9 +234,9 @@ TARGET_FF=$(awk   -v u="$USABLE" -v f="$F_FIREFOX" 'BEGIN{printf "%d", u*f}')
 log "usable ${USABLE}px -> btop ${TARGET_BTOP}, firefox ${TARGET_FF}, spotify remainder"
 
 dispatch "hl.dsp.window.resize({ window = \"address:$BTOP\", x = $bw, y = $TARGET_BTOP })"
-sleep 0.4
+wait_settled "$BTOP"
 dispatch "hl.dsp.window.resize({ window = \"address:$FIREFOX\", x = $fw, y = $TARGET_FF })"
-sleep 0.4
+wait_settled "$FIREFOX"
 
 dispatch "hl.dsp.focus({ window = \"address:$FIREFOX\" })"
 
