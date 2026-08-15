@@ -25,7 +25,7 @@
 
 -- Rebuild the portrait-monitor dashboard on workspace 2: btop / firefox /
 -- spotify, tiled top to bottom. See ~/.local/bin/portrait-dashboard.
-o.bind("SUPER + D", "Portrait dashboard", "portrait-dashboard")
+o.bind("SHIFT + ALT + X", "Portrait dashboard", "portrait-dashboard")
 
 -- Logitech MX Keys examples:
 -- o.bind("SUPER + SHIFT + S", nil, "omarchy-capture-screenshot")
