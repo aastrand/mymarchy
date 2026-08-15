@@ -27,6 +27,12 @@
 -- spotify, tiled top to bottom. See ~/.local/bin/portrait-dashboard.
 o.bind("SHIFT + ALT + X", "Portrait dashboard", "portrait-dashboard")
 
+-- SUPER+SHIFT+S is the Windows snipping-tool shortcut, so it gets hit by
+-- muscle memory. Omarchy binds it to the Google Maps web app, which is a
+-- surprising thing to have open mid-thought.
+hl.unbind("SUPER + SHIFT + S")
+o.bind("SUPER + SHIFT + S", "Screenshot region", "omarchy-capture-screenshot region")
+
 -- Logitech MX Keys examples:
 -- o.bind("SUPER + SHIFT + S", nil, "omarchy-capture-screenshot")
 -- o.bind("SUPER + H", nil, "voxtype record toggle")

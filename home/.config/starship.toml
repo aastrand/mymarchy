@@ -1,0 +1,112 @@
+# Powerline prompt, translated from the Oh My Posh "gruvbox" theme used on the
+# old Ubuntu install (~/Documents/code/dotfiles/gruvbox.omp.json).
+#
+# Segment colours are taken straight from that file:
+#   time  #3A3A3A on white      path #458588 on #282828
+#   git   #98971A on #282828    languages keep their own brand colours
+#
+# The powerline separators need a Nerd Font. JetBrainsMono Nerd Font is the
+# Omarchy default here, so they render.
+#
+# Only the always-present segments (time / path / git) are powerline blocks.
+# Language segments are plain coloured text: Starship drops a module that has
+# nothing to show, but it still renders any literal separator around it, so
+# powerline-ing them would leave stray chevrons in non-project directories.
+
+add_newline = true
+command_timeout = 500
+
+# Each block opens and closes its own separators, rather than chaining
+# background transitions between them. Chaining looks marginally tidier when
+# every segment is present, but Starship still renders the literal separators
+# of a module that has nothing to show -- which left a stray green chevron
+# after the path in every non-git directory.
+format = """
+[](fg:#3A3A3A)$time[](fg:#3A3A3A)\
+[](fg:#458588)$directory[](fg:#458588)\
+$git_branch$git_status\
+$nodejs$python$golang$rust$ruby$java$docker_context\
+$line_break\
+$character
+"""
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bg:#3A3A3A fg:#ffffff"
+format = '[ $time ]($style)'
+
+[directory]
+style = "bg:#458588 fg:#282828 bold"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = " "
+read_only_style = "bg:#458588 fg:#cc241d"
+
+[directory.substitutions]
+"Documents" = " "
+"Downloads" = " "
+"Pictures" = " "
+"Music" = " "
+
+[git_branch]
+symbol = ""
+style = "bg:#98971A fg:#282828 bold"
+format = '[](fg:#98971A)[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#98971A fg:#282828"
+format = '[$all_status$ahead_behind ]($style)[](fg:#98971A)'
+ahead      = "⇡${count}"
+diverged   = "⇕⇡${ahead_count}⇣${behind_count}"
+behind     = "⇣${count}"
+conflicted = " "
+up_to_date = ""
+untracked  = "?"
+modified   = ""
+stashed    = ""
+staged     = ""
+renamed    = ""
+deleted    = ""
+
+[character]
+success_symbol = "[❯](bold #98971A)"
+error_symbol = "[❯](bold #cc241d)"
+
+# Language segments: shown only in relevant projects, so they are plain
+# coloured text rather than powerline blocks.
+[nodejs]
+symbol = " "
+style = "fg:#8ED1F7"
+format = '[ $symbol$version]($style)'
+
+[python]
+symbol = " "
+style = "fg:#FFDE57"
+format = '[ $symbol$version]($style)'
+
+[golang]
+symbol = " "
+style = "fg:#8ED1F7"
+format = '[ $symbol$version]($style)'
+
+[rust]
+symbol = " "
+style = "fg:#d65d0e"
+format = '[ $symbol$version]($style)'
+
+[ruby]
+symbol = " "
+style = "fg:#AE1401"
+format = '[ $symbol$version]($style)'
+
+[java]
+symbol = " "
+style = "fg:#FEAC19"
+format = '[ $symbol$version]($style)'
+
+[docker_context]
+symbol = " "
+style = "fg:#458588"
+format = '[ $symbol$context]($style)'
