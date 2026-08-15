@@ -69,10 +69,10 @@ led1 = { lighting = { mode = "fixed", colors = [[128, 123, 17]] } }
 led2 = { lighting = { mode = "fixed", colors = [[128, 123, 17]] } }
 
 [device-settings.f226946857a3141b80fefa0bae8de91cdba1c6eedf91d96ea7bef76ce88b4e90]
-led2 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
-led1 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
-led4 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
-led3 = { lighting = { mode = "static", colors = [[170, 133, 40]] } }
+led2 = { lighting = { mode = "off", colors = [] } }
+led1 = { lighting = { mode = "off", colors = [] } }
+led4 = { lighting = { mode = "off", colors = [] } }
+led3 = { lighting = { mode = "off", colors = [] } }
 
 
 # A list of profiles to be used with each device's settings

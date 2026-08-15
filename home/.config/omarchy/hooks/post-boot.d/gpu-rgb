@@ -1,0 +1,15 @@
+#!/bin/bash
+# Set the graphics card's RGB to the warm gold used across this machine.
+#
+# OpenRGB is the only thing that can reach the GPU: its lighting lives on the
+# card's own ENE SMBus controller, which liquidctl and CoolerControl cannot
+# touch. Every other device here -- Kraken ring/logo, the NZXT RGB & Fan
+# Controller, the motherboard Aura -- is owned by coolercontrold, which
+# applies its own settings on boot and after resume, so they need nothing here.
+#
+# Matched by name rather than by index: OpenRGB numbers devices in detection
+# order, so `--device 0` shifts whenever a USB RGB device (keyboard, etc.) is
+# plugged in or removed.
+
+openrgb --device "ASUS ROG STRIX GeForce RTX 5070 Ti Gaming OC" \
+        --mode Static --color AA8528 >/dev/null 2>&1 || true

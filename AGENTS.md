@@ -98,13 +98,29 @@ bin/check            report drift; exits non-zero when out of sync
   `coolercontrold` is enabled and applies settings on boot (`apply_on_boot`).
 - **`nzxt_kraken3` is NOT blacklisted.** It was verified not to block control —
   writes fail only for the unprivileged user, and the daemon runs as root.
-- **All RGB is CoolerControl too — OpenRGB is not installed and not needed.**
-  liquidctl's `AuraLed` driver reaches the motherboard controller, so one
-  daemon owns cooling and every LED. Mode names differ per driver and are not
-  interchangeable: `KrakenX3` and `SmartDevice2` use `fixed`, `AuraLed` uses
-  `static`. Writing `fixed` to the Aura fails silently — the config looks
-  right and the LEDs stay dark. List a driver's modes with:
+- **RGB is split between two owners, deliberately.**
+
+  *CoolerControl* owns everything liquidctl can reach — Kraken `ring` (#FFFCBA)
+  and `logo` (off), NZXT RGB & Fan Controller `led1`/`led2` (#807B11), and the
+  motherboard ASUS Aura (`off`). Settings live in `/etc/coolercontrol/config.toml`
+  and are applied on boot and after resume.
+
+  Mode names differ per driver and are **not** interchangeable: `KrakenX3` and
+  `SmartDevice2` use `fixed`, `AuraLed` uses `static`. Writing `fixed` to the
+  Aura fails silently — the config looks correct and the LEDs stay dark. List a
+  driver's modes with:
   `python3 -c "import liquidctl.driver.aura_led as m; print(m._COLOR_MODES.keys())"`
+
+  *OpenRGB* owns the GPU only. The ASUS ROG STRIX RTX 5070 Ti's lighting is on
+  the card's own ENE SMBus controller, which liquidctl and CoolerControl cannot
+  reach at all. Set by the `post-boot` hook at
+  `~/.config/omarchy/hooks/post-boot.d/gpu-rgb` (#AA8528). The hook matches the
+  card **by name, not by index** — OpenRGB numbers devices in detection order,
+  so `--device 0` shifts when a USB RGB device is plugged in or removed.
+
+  **The motherboard is intentionally `off`.** The old Ubuntu script's
+  `openrgb --device 0` was the *GPU*, not the motherboard; nothing there ever
+  coloured the board. Do not "restore" gold to it.
 
 - **Fan curves are driven by Kraken liquid temperature, not CPU temperature.**
   Coolant is thermally damped, so fans do not chase momentary CPU spikes.

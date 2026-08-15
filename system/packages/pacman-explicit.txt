@@ -113,6 +113,7 @@ omarchy-keyring
 omarchy-nvim
 omarchy-settings
 omawrite
+openrgb
 pacman-contrib
 pamixer
 pinta

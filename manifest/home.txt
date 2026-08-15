@@ -7,3 +7,4 @@
 .config/kitty/kitty.conf
 .config/omarchy/shell.json
 .config/git/config
+.config/omarchy/hooks/post-boot.d/gpu-rgb
