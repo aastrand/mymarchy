@@ -1,6 +1,7 @@
 # Files tracked under $HOME. One path per line, relative to $HOME.
 # RULE: only add a file that differs from the Omarchy default in
 # /usr/share/omarchy/config/. Run bin/check to verify.
+.config/hypr/hyprland.lua
 .config/hypr/monitors.lua
 .config/hypr/looknfeel.lua
 .config/hypr/input.lua
