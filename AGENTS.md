@@ -98,6 +98,14 @@ bin/check            report drift; exits non-zero when out of sync
   `coolercontrold` is enabled and applies settings on boot (`apply_on_boot`).
 - **`nzxt_kraken3` is NOT blacklisted.** It was verified not to block control —
   writes fail only for the unprivileged user, and the daemon runs as root.
+- **All RGB is CoolerControl too — OpenRGB is not installed and not needed.**
+  liquidctl's `AuraLed` driver reaches the motherboard controller, so one
+  daemon owns cooling and every LED. Mode names differ per driver and are not
+  interchangeable: `KrakenX3` and `SmartDevice2` use `fixed`, `AuraLed` uses
+  `static`. Writing `fixed` to the Aura fails silently — the config looks
+  right and the LEDs stay dark. List a driver's modes with:
+  `python3 -c "import liquidctl.driver.aura_led as m; print(m._COLOR_MODES.keys())"`
+
 - **Fan curves are driven by Kraken liquid temperature, not CPU temperature.**
   Coolant is thermally damped, so fans do not chase momentary CPU spikes.
   Do not "fix" this back to a CPU source.
