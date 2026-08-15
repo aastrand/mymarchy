@@ -18,16 +18,6 @@ hl.config({
   decoration = {
     -- Use round window corners.
     rounding = 8,
-
-    -- Blur whatever shows through translucent surfaces. Omarchy ships this
-    -- disabled. Most visible on the bar, launcher, and notification layers;
-    -- windows themselves are only 0.985/0.96 opaque, so the effect there is
-    -- subtle by design.
-    blur = {
-      enabled = true,
-      size = 8,
-      passes = 3,
-    },
   },
 })
 
