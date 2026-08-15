@@ -1,7 +1,11 @@
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
 -- List current monitors and supported resolutions with: hyprctl monitors all
 
-local omarchy_gdk_scale = 2
+-- Both panels are 1440p-class at ~110 PPI, not HiDPI. Omarchy ships
+-- gdk_scale = 2, which targets 4K/retina displays; the manual prescribes 1
+-- for 1080p/1440p. At 2, XWayland GTK/Electron apps (Spotify) render their
+-- entire UI at double size.
+local omarchy_gdk_scale = 1
 local omarchy_monitor_scale = "auto"
 
 hl.env("GDK_SCALE", tostring(omarchy_gdk_scale))
