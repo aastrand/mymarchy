@@ -105,6 +105,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/systemd/user/rsnapshot-gamma.timer` | Mondays 07:00 |
 | `.config/systemd/user/rsnapshot-delta.timer` | 1st of month 06:30 |
 | `.config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf` | Distinct nicks for the Scarlett's two physical inputs (both shipped as "Scarlett Solo USB", so the menu showed the same name twice); NVIDIA HDMI output disabled |
+| `.config/mise/config.toml` | CLI tooling installed through mise rather than pacman — `claude`, `codex`, `gh`, `hunkdiff`. These appear in **neither** `pacman-explicit.txt` nor `aur-explicit.txt`, so without this file they are recorded nowhere |
 | `.bashrc` | Restores GNU `ls` over Omarchy's eza alias (eza's `-s` breaks `ls -alstr`), repopulates `LS_COLORS`, moves eza to `ll`/`lla`/`llt`; sources `cargo/env` |
 
 **Tier 2a —** root-owned files, copied to `system/`. Never auto-restored;
