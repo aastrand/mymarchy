@@ -71,6 +71,19 @@ __fzf_tab_gate() {
   count=$(compgen -"$kind" -- "$expanded" 2> /dev/null | command grep -c .)
 
   if (( count <= ${FZF_TAB_MIN_CANDIDATES:-15} )); then
+    # Handing back an empty COMPREPLY only falls through to readline if the
+    # *compspec being executed* carries -o default. That holds for the -D
+    # default below, but not for the ~70 commands fzf registers directly:
+    #   complete -F _fzf_path_completion ls      <- no fallback flags at all
+    # so under the threshold Tab did nothing for ls/cat/rm/cp/mv while working
+    # for vim/kill/ssh, which fzf happens to register with -o default. compopt
+    # sets the option on the running compspec, so the fallback no longer depends
+    # on how each command was registered.
+    if [[ $kind == d ]]; then
+      compopt -o dirnames 2> /dev/null
+    else
+      compopt -o default 2> /dev/null
+    fi
     COMPREPLY=()
     return 0
   fi
