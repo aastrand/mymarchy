@@ -99,6 +99,13 @@ format = '[[ $symbol $branch ](fg:color_fg0 bg:color_aqua)]($style)'
 [git_status]
 style = "bg:color_aqua"
 format = '[[($all_status$ahead_behind )](fg:color_fg0 bg:color_aqua)]($style)'
+# Show how far ahead/behind the upstream we are, not just that we are.
+# Starship's defaults are bare arrows with no number, which tells you a push is
+# pending but not whether it is one commit or twenty. Several agents commit to
+# some of these repos, so the count is the useful part.
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 
 [nodejs]
 symbol = ""
