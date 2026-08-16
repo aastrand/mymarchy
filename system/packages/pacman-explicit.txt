@@ -17,7 +17,6 @@ btop
 btrfs-progs
 chromium
 clang
-cliamp
 cups
 cups-browsed
 cups-filters
@@ -69,7 +68,6 @@ inetutils
 inotify-tools
 inxi
 jq
-kdenlive
 kernel-modules-hook
 kitty
 lazydocker
@@ -106,15 +104,12 @@ nss-mdns
 nvidia-open-dkms
 nvidia-utils
 obs-studio
-obsidian
 omacalc
-omacut
 omarchy
 omarchy-emacs
 omarchy-keyring
 omarchy-nvim
 omarchy-settings
-omawrite
 openbsd-netcat
 openrgb
 pacman-contrib
@@ -171,7 +166,6 @@ wtype
 xdg-desktop-portal-gtk
 xdg-desktop-portal-hyprland
 xdg-terminal-exec
-xournalpp
 yaru-icon-theme
 yay
 yt-dlp
