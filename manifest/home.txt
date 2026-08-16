@@ -25,3 +25,4 @@
 .config/systemd/user/rsnapshot-beta.timer
 .config/systemd/user/rsnapshot-gamma.timer
 .config/systemd/user/rsnapshot-delta.timer
+.config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf
