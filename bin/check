@@ -43,6 +43,16 @@ while IFS= read -r rel; do
   fi
 done < <(manifest_lines manifest/home.txt)
 
+# The README's "What's tracked today" tables are the only prose description of
+# why each file diverges, and they are maintained by hand. They had silently
+# fallen six entries behind the manifest before this check existed. A path is
+# considered documented if it appears in the README wrapped in backticks.
+echo "==> tracked files missing from the README tables"
+while IFS= read -r rel; do
+  grep -qF -- "\`$rel\`" README.md || {
+    echo "  UNDOCUMENTED $rel — add a row to README.md"; drift=1; }
+done < <(manifest_lines manifest/home.txt; manifest_lines manifest/system.txt)
+
 echo
 if (( drift )); then
   echo "Drift found. Run bin/capture to sync the repo."
