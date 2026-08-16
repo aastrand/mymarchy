@@ -30,3 +30,30 @@ alias grep='grep --color=auto'
 alias ll='eza -lh --group-directories-first --icons=auto'
 alias lla='ll -a'
 alias llt='eza -lah -S --icons=auto --sort=modified'  # newest last, the -alstr view
+
+# ---- Tab completion -------------------------------------------------------
+# Omarchy binds TAB to menu-complete with show-all-if-ambiguous on, so a Tab
+# with hundreds of candidates dumps every one of them inline and scrolls the
+# screen away. Route Tab through fzf instead: fzf already installs itself as
+# bash's default completer (complete -D), it was just gated behind the `**`
+# suffix. An empty trigger makes it fire on a bare Tab.
+export FZF_COMPLETION_TRIGGER=''
+bind 'TAB: complete'                  # fzf's completer needs plain complete, not menu-complete
+bind 'set show-all-if-ambiguous off'  # let fzf present the list instead of pre-dumping it
+bind 'set page-completions on'        # paginate the completers fzf does not wrap (git, systemctl)
+bind 'set completion-query-items 100'
+
+# gruvbox-dark palette for fzf. Deliberately no bg: colour -- leaving it unset
+# lets kitty's 0.85 translucency show through instead of painting it over.
+export FZF_DEFAULT_OPTS="--height=45% --layout=reverse --border=rounded --info=inline
+  --color=bg+:#3c3836,spinner:#8ec07c,hl:#83a598,fg:#bdae93,header:#83a598
+  --color=info:#fabd2f,pointer:#8ec07c,marker:#8ec07c,fg+:#ebdbb2,prompt:#fabd2f,hl+:#83a598"
+
+# Preview pane for Tab completion. fzf's walker emits absolute paths, so {} is
+# a valid path whatever the cwd.
+# --select-1 accepts immediately when the prefix is already unambiguous, so an
+# unsurprising Tab stays instant instead of opening a picker over one row;
+# --exit-0 bails out when nothing matches rather than showing an empty pane.
+export FZF_COMPLETION_OPTS='--select-1 --exit-0
+  --preview "if [ -d {} ]; then eza -la --icons=auto --color=always {}; else bat -n --color=always --line-range :100 {}; fi 2>/dev/null"
+  --preview-window=right,55%,wrap,border-left'

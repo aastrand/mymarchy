@@ -9,11 +9,6 @@ and cooling curves.
 
 > Agents working on this machine: read [AGENTS.md](AGENTS.md) first.
 
-![The screensaver on both monitors — DP-1 mid-effect, DP-2 settled](docs/screensaver.png)
-
-Both monitors, mid-transition: `ttfx` is still animating on DP-1 while DP-2 has
-settled on the wordmark. See `branding/screensaver.txt` in the table below.
-
 ## Why this exists
 
 Omarchy ships good defaults in `/usr/share/omarchy/` and loads your overrides
