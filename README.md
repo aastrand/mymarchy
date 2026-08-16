@@ -166,6 +166,24 @@ run would churn and log errors forever.
 `no_create_root 1` makes rsnapshot refuse to run when the NAS is absent, rather
 than quietly writing a "backup" to the local disk that protects nothing.
 
+**Tailscale and the LAN.** The Mullvad exit node routes *all* traffic through it,
+including the local network, unless LAN access is explicitly allowed. With it off,
+`blackbox.local` and `192.168.68.83` were unreachable while the tailnet address
+`100.107.33.91` still worked — and the nightly backup failed with
+`cifs_mount failed w/return code = -115`. Fixed with:
+
+```bash
+tailscale set --exit-node-allow-lan-access=true
+```
+
+It is a stored preference and survives reboots, but a later `tailscale up` with
+explicit flags can reset it. If backups start failing after touching Tailscale,
+check this first:
+
+```bash
+tailscale debug prefs | grep -i lanaccess
+```
+
 **Cooling.** An NZXT Kraken X-series pump, an NZXT RGB & Fan Controller
 (3 fans), and an ASUS Aura LED controller, all managed by
 [CoolerControl](https://docs.coolercontrol.org/). `coolercontrold` is enabled
