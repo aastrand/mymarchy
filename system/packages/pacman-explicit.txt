@@ -158,6 +158,7 @@ ufw
 ufw-docker
 usage
 uwsm
+vivid
 vulkan-radeon
 whois
 wireless-regdb

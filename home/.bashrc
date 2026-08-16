@@ -17,7 +17,12 @@ source "$OMARCHY_PATH/default/bash/rc"
 # Give back real GNU ls -- eza's flag grammar breaks habits like `ls -alstr`
 # (eza's -s is --sort and demands an argument). eza moves to ll/lla instead.
 unalias ls 2>/dev/null
-[[ -x /usr/bin/dircolors ]] && eval "$(dircolors -b)"   # populate LS_COLORS
+# LS_COLORS: gruvbox-dark via vivid, falling back to the stock dircolors palette
+if command -v vivid &>/dev/null; then
+  export LS_COLORS="$(vivid generate gruvbox-dark)"
+elif [[ -x /usr/bin/dircolors ]]; then
+  eval "$(dircolors -b)"
+fi
 # no --group-directories-first here: it groups dirs separately and so breaks
 # `ls -alstr`, where the whole point is that the newest entry is the last line
 alias ls='ls --color=auto'
