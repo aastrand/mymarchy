@@ -1,0 +1,59 @@
+# rsync exclude patterns. Paths starting with / are anchored to each backup
+# source's root, so /GoodNES/ means Downloads/GoodNES when backing up Downloads.
+
+# --- secrets: never leave this machine ---
+# ~/Documents/code held localhost+1-key.pem, which is exactly why this section
+# matches by pattern inside included trees rather than trusting directory choice.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+.env
+.env.*
+*.kdbx
+credentials*
+.netrc
+
+# --- build output and dependency trees: recreatable, and huge ---
+# target/ alone is 3.65G of the 3.7G in Documents.
+target/
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.next/
+.turbo/
+vendor/
+Cargo.lock.orig
+
+# --- caches and junk ---
+.cache/
+.thumbnails/
+.Trash*/
+lost+found/
+*.swp
+*.tmp
+~$*
+.#*
+#*#
+.DS_Store
+Thumbs.db
+
+# --- large and re-fetchable: the "I can download it again" rule ---
+*.iso
+*.img
+*.qcow2
+*.vmdk
+*.vdi
+*.appimage
+*.AppImage
+
+# --- Downloads is a junk drawer; keep the small stuff, drop the bulk ---
+# Anything genuinely irreplaceable should live in Documents, not here.
+/GoodNES/
+/Best NES Games/
+*Samurai Champloo*

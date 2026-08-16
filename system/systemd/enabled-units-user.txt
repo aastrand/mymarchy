@@ -11,5 +11,9 @@ p11-kit-server.socket
 pipewire-pulse.service
 pipewire-pulse.socket
 pipewire.socket
+rsnapshot-alpha.timer
+rsnapshot-beta.timer
+rsnapshot-delta.timer
+rsnapshot-gamma.timer
 wireplumber.service
 xdg-user-dirs.service

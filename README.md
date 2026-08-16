@@ -96,6 +96,14 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/starship.toml` | Full custom powerline prompt, replacing Omarchy's four-line default |
 | `.local/bin/portrait-dashboard` | Rebuilds the two-monitor window layout; replaces the Ubuntu-era `restore_desktop.sh` |
 | `.local/bin/screenshot-all-monitors` | `grim` with no `-g`, to capture the whole layout in one image |
+| `.config/rsnapshot/rsnapshot.conf` | Rolling hardlinked snapshots to the NAS. TAB-separated; `-rt` not `-a` because SMB cannot represent POSIX perms |
+| `.config/rsnapshot/excludes` | Build output, caches, re-fetchable bulk, and secrets — `*.pem`/`*.key`/`.env` are matched *inside* included trees |
+| `.config/systemd/user/rsnapshot@.service` | Runs one rsnapshot interval; `OnFailure=` wires the notifier |
+| `.config/systemd/user/rsnapshot-failure@.service` | Desktop notification when a backup fails, so it is not silent |
+| `.config/systemd/user/rsnapshot-alpha.timer` | 08/12/18/23 daily |
+| `.config/systemd/user/rsnapshot-beta.timer` | daily 07:30 |
+| `.config/systemd/user/rsnapshot-gamma.timer` | Mondays 07:00 |
+| `.config/systemd/user/rsnapshot-delta.timer` | 1st of month 06:30 |
 | `.bashrc` | Restores GNU `ls` over Omarchy's eza alias (eza's `-s` breaks `ls -alstr`), repopulates `LS_COLORS`, moves eza to `ll`/`lla`/`llt`; sources `cargo/env` |
 
 **Tier 2a —** root-owned files, copied to `system/`. Never auto-restored;
@@ -122,6 +130,39 @@ record what to reinstall, and are read by a human, not a script.
 | `system/etc/fstab.reference` | **reference only** — never restore; UUIDs are disk-specific |
 
 ## Machine notes
+
+**Backups.** rsnapshot to the Synology (`blackbox`) over SMB, mounted on demand
+at `/mnt/blackbox` via an `x-systemd.automount` entry in `/etc/fstab` with
+credentials in `/etc/samba/credentials-blackbox` (mode 600, not tracked).
+
+Every snapshot is a complete browsable directory tree; unchanged files are
+hardlinks to the previous snapshot, so N snapshots of a ~875MB set cost little
+more than 875MB. Verified: two snapshots, same inode, `du` of both together
+equals one. Browse them in File Station under `Backups/glasspane/alpha.0`,
+`alpha.1`, `beta.0` … newest is always `.0`.
+
+Retention mirrors the Back In Time policy from Ubuntu: all snapshots for ~2
+days, then daily for 7, weekly for 4, monthly for 24.
+
+Why SMB rather than SSH or the rsync daemon — all three were tried:
+
+- **SSH** authenticates fine (the key works, PAM opens a session) but DSM then
+  refuses every command with `Permission denied, please try again`, because it
+  restricts SSH to the `administrators` group. Synology's position is that SSH
+  access *is* admin access.
+- **DSM's rsync service** (port 873) never started listening despite being
+  enabled with an account, and did not create the `NetBackup` share its own
+  documentation describes.
+- **SMB** works, and — the load-bearing question — **hardlinks work over it**,
+  which is what makes the whole snapshot model viable. Tested before building
+  anything on the assumption.
+
+The mount is `nounix`/`forceuid`, so POSIX permissions and ownership are not
+preserved. That is why the config uses `-rt` rather than `-a`; with `-a` every
+run would churn and log errors forever.
+
+`no_create_root 1` makes rsnapshot refuse to run when the NAS is absent, rather
+than quietly writing a "backup" to the local disk that protects nothing.
 
 **Cooling.** An NZXT Kraken X-series pump, an NZXT RGB & Fan Controller
 (3 fans), and an ASUS Aura LED controller, all managed by

@@ -17,3 +17,11 @@
 .config/kitty/font-size.conf
 .config/omarchy/branding/screensaver.txt
 .bashrc
+.config/rsnapshot/rsnapshot.conf
+.config/rsnapshot/excludes
+.config/systemd/user/rsnapshot@.service
+.config/systemd/user/rsnapshot-failure@.service
+.config/systemd/user/rsnapshot-alpha.timer
+.config/systemd/user/rsnapshot-beta.timer
+.config/systemd/user/rsnapshot-gamma.timer
+.config/systemd/user/rsnapshot-delta.timer

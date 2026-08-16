@@ -132,6 +132,7 @@ qemu-user-static-binfmt
 qrencode
 quickshell-git
 ripgrep
+rsnapshot
 ruby
 sddm
 slurp

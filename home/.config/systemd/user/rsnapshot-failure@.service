@@ -1,0 +1,9 @@
+[Unit]
+Description=Notify that rsnapshot %i failed
+# Wired up via OnFailure= on the backup units. Without this a failed backup is
+# silent -- systemd records it and nothing tells you, which is how people
+# discover a year later that nothing has run since a NAS outage.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/omarchy-notification-send -u critical "Backup failed" "rsnapshot %i could not complete. Check: journalctl --user -u rsnapshot@%i"

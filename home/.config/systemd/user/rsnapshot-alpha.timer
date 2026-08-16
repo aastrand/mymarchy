@@ -1,0 +1,9 @@
+[Unit]
+Description=rsnapshot alpha (4x daily)
+[Timer]
+OnCalendar=*-*-* 08,12,18,23:00:00
+Persistent=true
+RandomizedDelaySec=5m
+Unit=rsnapshot@alpha.service
+[Install]
+WantedBy=timers.target

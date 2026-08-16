@@ -1,0 +1,8 @@
+[Unit]
+Description=rsnapshot beta (daily)
+[Timer]
+OnCalendar=*-*-* 07:30:00
+Persistent=true
+Unit=rsnapshot@beta.service
+[Install]
+WantedBy=timers.target

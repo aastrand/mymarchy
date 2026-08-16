@@ -1,0 +1,14 @@
+[Unit]
+Description=rsnapshot %i backup to blackbox
+Documentation=man:rsnapshot(1)
+# The NAS is an on-demand automount; rsnapshot refuses to run if it is absent
+# (no_create_root), so a missing NAS fails loudly instead of quietly writing a
+# "backup" to the local disk.
+
+OnFailure=rsnapshot-failure@%i.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsnapshot -c %h/.config/rsnapshot/rsnapshot.conf %i
+Nice=10
+IOSchedulingClass=idle

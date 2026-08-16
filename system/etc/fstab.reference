@@ -29,3 +29,9 @@ UUID=B6789A9C789A5AC7 /mnt/storage ntfs3 rw,uid=1000,gid=1000,umask=022,windows_
 
 # Ubuntu root filesystem
 UUID=b928b8bb-aa69-4160-b976-5492ee4390f4 /mnt/ubuntu ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
+
+# Synology NAS (blackbox) over SMB, for rsnapshot backups.
+# nounix/forceuid means POSIX permissions are NOT preserved -- rsnapshot uses
+# -rt rather than -a for that reason. Hardlinks DO work, which is what makes
+# the rolling snapshots possible.
+//blackbox.local/nas /mnt/blackbox cifs credentials=/etc/samba/credentials-blackbox,uid=1000,gid=1000,iocharset=utf8,noauto,x-systemd.automount,x-systemd.idle-timeout=120,_netdev,soft 0 0

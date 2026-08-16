@@ -1,0 +1,8 @@
+[Unit]
+Description=rsnapshot gamma (weekly)
+[Timer]
+OnCalendar=Mon *-*-* 07:00:00
+Persistent=true
+Unit=rsnapshot@gamma.service
+[Install]
+WantedBy=timers.target
