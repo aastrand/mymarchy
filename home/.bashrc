@@ -39,6 +39,39 @@ alias llt='eza -lah -S --icons=auto --sort=modified'  # newest last, the -alstr 
 # suffix. An empty trigger makes it fire on a bare Tab.
 export FZF_COMPLETION_TRIGGER=''
 bind 'TAB: complete'                  # fzf's completer needs plain complete, not menu-complete
+
+# fzf has no candidate-count threshold of its own, so wrap its default
+# completer in one: under the limit, hand back an empty COMPREPLY and let
+# `-o default` fall through to readline's own filename completion (which keeps
+# trailing slashes, quoting and inline prefix-completion); over it, open fzf.
+FZF_TAB_MIN_CANDIDATES=15
+__fzf_tab_threshold() {
+  local cur expanded count
+  cur="${COMP_WORDS[COMP_CWORD]}"
+
+  # `**` stays an explicit "use fzf regardless of count" escape hatch
+  if [[ $cur == *'**' ]]; then
+    local FZF_COMPLETION_TRIGGER='**'
+    __fzf_default_completion "$@"
+    return
+  fi
+
+  # Never expand a word that could execute something
+  if [[ $cur == *'$('* || $cur == *'`'* ]]; then
+    COMPREPLY=()
+    return 0
+  fi
+
+  eval "expanded=$cur" 2> /dev/null || expanded=$cur
+  count=$(compgen -f -- "$expanded" 2> /dev/null | command grep -c .)
+
+  if (( count <= ${FZF_TAB_MIN_CANDIDATES:-15} )); then
+    COMPREPLY=()
+    return 0
+  fi
+  __fzf_default_completion "$@"
+}
+complete -D -F __fzf_tab_threshold -o default -o bashdefault
 bind 'set show-all-if-ambiguous off'  # let fzf present the list instead of pre-dumping it
 bind 'set page-completions on'        # paginate the completers fzf does not wrap (git, systemctl)
 bind 'set completion-query-items 100'

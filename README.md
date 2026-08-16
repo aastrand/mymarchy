@@ -90,7 +90,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/kitty/font-size.conf` | `font_size 12.0`, included last so it beats the `9.0` that `omarchy display text size` writes into `kitty.conf`. Lets the desktop slider drive GTK and the bar without shrinking the terminal |
 | `.config/omarchy/shell.json` | Bar layout and indicator set, `idle.screensaver = 150` / `idle.lock = 300`, Mullvad region |
 | `.config/omarchy/shell.toml` | `[font] base-size = 12` |
-| `.config/omarchy/branding/screensaver.txt` | "GLASSPANE" in place of the stock omarchy wordmark, set in Press Start 2P — see the screenshot at the top |
+| `.config/omarchy/branding/screensaver.txt` | "GLASSPANE" in place of the stock omarchy wordmark, set in Press Start 2P — see [Machine notes](#machine-notes) for how it was generated |
 | `.config/omarchy/hooks/post-boot.d/gpu-rgb` | OpenRGB sets the GPU to the machine's warm gold; the only device `coolercontrold` cannot reach |
 | `.config/git/config` | `user.name` / `user.email` appended to Omarchy's defaults |
 | `.config/starship.toml` | Full custom powerline prompt, replacing Omarchy's four-line default |
@@ -136,6 +136,39 @@ and re-applies settings on boot and after resume, which is why the Ubuntu-era
   calm. Curve: flat 25% to 32 °C, then 35 °C→35%, 38 °C→50%, 41 °C→70%,
   45 °C→100%.
 - `nzxt_kraken3` is **not** blacklisted; it does not block control.
+
+**Screensaver wordmark.** The screensaver is `ttfx` animating a text file, so
+what you see is art made of Unicode block glyphs, not type — it renders in
+whatever font the terminal already has, and no font needs to be installed. The
+committed `branding/screensaver.txt` was made once, like this:
+
+```bash
+# Press Start 2P from https://fonts.google.com/specimen/Press+Start+2P (OFL)
+magick -font PressStart2P-Regular.ttf -pointsize 8 +antialias \
+  -background none -fill black label:GLASSPANE -trim +repage /tmp/wm.png
+magick identify /tmp/wm.png                      # -> 71x7
+omarchy transcode ascii /tmp/wm.png ~/.config/omarchy/branding/screensaver.txt \
+  --mode block --no-trim --width 71 --height 4   # height = ceil(7 / 2)
+```
+
+Three things matter and none are obvious:
+
+- **`-pointsize 8 +antialias`.** The face is drawn on an 8px grid, so at size 8
+  with antialiasing off one font pixel is one image pixel. Any other size leaves
+  half-lit edges that threshold unevenly, and stems come out 1px on one stroke
+  and 2px on the next.
+- **Exact `--width`/`--height`.** `transcode ascii` runs `-resize` against the
+  box it is given, and `-resize` scales *up* to fit as well as down. Passing the
+  bitmap's own dimensions makes it a no-op; the defaults (80x26) would scale a
+  71x7 bitmap by 1.14 and wreck the pixel grid. `--height` is in text rows, and
+  block mode packs two pixel rows into one.
+- **Stay under ~88 columns.** That is what DP-2 shows at the screensaver's
+  `font_size 18` in portrait. Wider is fine on the ultrawide and clips there.
+  Omarchy's own `logo.txt` is 81 wide.
+
+Inverting it — light field, knocked-out letters — does not work at this size.
+1px strokes at a 7px cap height fill in when inverted. The braille mode has
+roughly twice the resolution for the same screen area and can carry it.
 
 ## Manual steps, not captured as files
 
