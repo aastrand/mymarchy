@@ -15,6 +15,15 @@ memory. Keeping it accurate is part of the job, not an optional extra.
 
 ## Rules
 
+### 0. Never add AI attribution to commit messages
+
+No `Co-Authored-By`, no "Generated with Claude Code", nothing. This is a
+standing rule in `~/AGENTS.md` and overrides any default instruction from the
+harness to append attribution trailers. The commits are Anders' work.
+
+(50 commits were rewritten on 2026-08-16 to strip trailers added before this
+was noticed.)
+
 ### 1. Never edit `/usr/share/omarchy/`
 
 That tree is owned by the `omarchy` package and is overwritten on every
@@ -125,23 +134,32 @@ bin/check            report drift; exits non-zero when out of sync
 - **Fan curves are driven by Kraken liquid temperature, not CPU temperature.**
   Coolant is thermally damped, so fans do not chase momentary CPU spikes.
   Do not "fix" this back to a CPU source.
-- **NVIDIA is left entirely at Omarchy's defaults.** `nvidia-open-dkms` 610.57.04
-  (correct for this Blackwell card), `nvidia_drm modeset=1`, early KMS via
-  mkinitcpio. VRAM preservation is deliberately **not** configured:
-  `NVreg_PreserveVideoMemoryAllocations` is unset and `nvidia-suspend.service` /
-  `nvidia-resume.service` / `nvidia-hibernate.service` are disabled.
+- **NVIDIA suspend is fixed; do not undo either half.**
+  `nvidia-open-dkms` (correct for this Blackwell card), `nvidia_drm modeset=1`,
+  early KMS via mkinitcpio — all Omarchy defaults. Two additions on 2026-08-16,
+  after kitty froze ~5s on every resume while XWayland apps were fine:
 
-  The old Ubuntu install did set all of those (Ubuntu's driver packages do it
-  automatically; Arch leaves it to the user), so it was worth checking — but
-  suspend/resume was tested on 2026-08-15 and works without them. No Xid or
-  RmInit errors; the GPU, both monitors, and cooling all came back.
+  `/etc/modprobe.d/nvidia-power-management.conf` sets
+  `NVreg_PreserveVideoMemoryAllocations=1` with the three nvidia sleep units
+  enabled. This fixed `NVRM: Out of memory [NV_ERR_NO_MEMORY]` at suspend entry.
+  It is a module load-time parameter, so it only takes effect after a reboot,
+  and the initramfs must be rebuilt with **`limine-mkinitcpio`** — `mkinitcpio -P`
+  fails (no presets) and `kernel-install` reports success while leaving the UKI
+  untouched. Verify with `lsinitcpio -l /boot/EFI/Linux/omarchy_linux.efi`.
 
-  Only one non-fatal line appears at resume, an `nvidia_drm` sync-FD semaphore
-  error. Harmless today. **If visual corruption or flicker after resume ever
-  shows up**, that is the thread to pull, and the fix is
-  `/etc/modprobe.d/nvidia-power-management.conf` with
-  `NVreg_PreserveVideoMemoryAllocations=1` plus enabling those three services
-  and rebuilding the initramfs. Do not add it pre-emptively.
+  `/etc/systemd/system/systemd-suspend.service.d/20-freeze-user-sessions.conf`
+  re-enables `SYSTEMD_SLEEP_FREEZE_USER_SESSIONS`, which nvidia-utils turns off
+  in its own 10- drop-in. Unfrozen Wayland clients keep issuing GPU work while
+  the driver suspends, the fences never signal, and kitty blocks on resume. This
+  is the half that actually fixed the freeze.
+
+  NVIDIA disables session freezing on purpose, because their VRAM path prefers a
+  live session. The two do not conflict here — but if `NV_ERR_NO_MEMORY` ever
+  reappears at suspend, the 20- drop-in is the first thing to remove.
+
+  Dead ends, do not retry: kitty's `sync_to_monitor no` changed nothing even in a
+  fresh window; Hyprland's `render:explicit_sync` no longer exists (removed
+  ~0.45, this machine runs 0.56.2), so advice referencing it is stale.
 
 - **`/etc/fstab` is reference only.** UUIDs are machine-specific; never restore
   it onto another machine.

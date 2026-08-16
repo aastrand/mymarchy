@@ -47,6 +47,7 @@ foot
 freerdp
 fzf
 git
+git-filter-repo
 gnome-disk-utility
 gnome-keyring
 gnome-themes-extra
