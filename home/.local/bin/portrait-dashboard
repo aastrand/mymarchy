@@ -30,6 +30,15 @@
 
 set -uo pipefail
 
+# Only one run at a time. Two overlapping runs both see "no Firefox windows
+# yet" during a cold start and both launch it, and a second invocation against
+# a running Firefox opens an empty window rather than doing nothing.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/portrait-dashboard.lock"
+if ! flock -n 9; then
+  echo "  another run is in progress" >&2
+  exit 0
+fi
+
 MAIN_WS=1
 MAIN_MONITOR=DP-1
 WS=2
@@ -206,6 +215,17 @@ ensure_two_firefox() {
   FF_ORDER=()
 
   n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+  # Check the process, not just mapped windows: during startup Firefox is
+  # running with nothing mapped yet, and launching it again in that gap adds
+  # an empty window instead of being a no-op.
+  if (( n == 0 )) && pgrep -x firefox >/dev/null 2>&1; then
+    log "firefox is starting up -- waiting for its windows rather than launching again"
+    for _ in $(seq 1 120); do
+      sleep 0.25
+      (( $(addrs_matching "$FIREFOX_MATCH" | wc -l) > 0 )) && break
+    done
+    n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
+  fi
   if (( n == 0 )); then
     cold=1
     log "firefox not running -- starting it and letting session restore settle"
