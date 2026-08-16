@@ -345,6 +345,15 @@ read -r _ sy sw sh <<<"$(geom "$SPOTIFY")"
 USABLE=$(( (sy + sh) - by ))
 TARGET_FF=$(awk -v u="$USABLE" -v f="$F_FIREFOX" 'BEGIN{printf "%d", u*f}')
 
+# Match the ultrawide Firefox's height as well as its top, so the two browser
+# windows line up on both edges and the portrait one is a vertical mirror.
+# Spotify absorbs whatever is left.
+read -r _ _ _ mh <<<"$(geom "$FF_MAIN")"
+if [[ -n ${mh:-} ]] && (( mh > 200 && mh < USABLE - 300 )); then
+  log "matching ultrawide firefox height: ${mh}px"
+  TARGET_FF=$mh
+fi
+
 # btop's height is derived, not fixed: it is whatever makes the portrait
 # Firefox start at the same screen y as the one on the ultrawide, so the two
 # browser windows line up across the monitors.
