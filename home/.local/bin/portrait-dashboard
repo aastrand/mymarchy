@@ -343,8 +343,30 @@ read -r _ fy fw fh <<<"$(geom "$FIREFOX")"
 read -r _ sy sw sh <<<"$(geom "$SPOTIFY")"
 
 USABLE=$(( (sy + sh) - by ))
-TARGET_BTOP=$(awk -v u="$USABLE" -v f="$F_BTOP"    'BEGIN{printf "%d", u*f}')
-TARGET_FF=$(awk   -v u="$USABLE" -v f="$F_FIREFOX" 'BEGIN{printf "%d", u*f}')
+TARGET_FF=$(awk -v u="$USABLE" -v f="$F_FIREFOX" 'BEGIN{printf "%d", u*f}')
+
+# btop's height is derived, not fixed: it is whatever makes the portrait
+# Firefox start at the same screen y as the one on the ultrawide, so the two
+# browser windows line up across the monitors.
+#
+# Deriving it beats a hardcoded fraction because the target moves -- the bar's
+# reserved area, gaps_in/gaps_out and border_size all shift where a window's
+# top edge lands, and any of those can change from the Omarchy menu.
+TARGET_BTOP=$(awk -v u="$USABLE" -v f="$F_BTOP" 'BEGIN{printf "%d", u*f}')
+read -r _ my _ _ <<<"$(geom "$FF_MAIN")"
+if [[ -n ${my:-} ]]; then
+  # Gap between two stacked windows, measured rather than assumed
+  # (2 * gaps_in + 2 * border_size).
+  GAP=$(( fy - (by + bh) ))
+  ALIGNED=$(( my - by - GAP ))
+  if (( ALIGNED > 100 && ALIGNED < USABLE - 200 )); then
+    log "aligning: ultrawide firefox top y=$my, gap ${GAP}px -> btop ${ALIGNED}px"
+    TARGET_BTOP=$ALIGNED
+  else
+    log "computed btop height ${ALIGNED}px is out of range -- falling back to F_BTOP"
+  fi
+fi
+
 log "usable ${USABLE}px -> btop ${TARGET_BTOP}, firefox ${TARGET_FF}, spotify remainder"
 
 dispatch "hl.dsp.window.resize({ window = \"address:$BTOP\", x = $bw, y = $TARGET_BTOP })"
