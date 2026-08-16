@@ -15,3 +15,4 @@
 .local/bin/screenshot-all-monitors
 .config/omarchy/shell.toml
 .config/kitty/font-size.conf
+.config/omarchy/branding/screensaver.txt
