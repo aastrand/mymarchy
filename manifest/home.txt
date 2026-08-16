@@ -14,3 +14,4 @@
 .config/starship.toml
 .local/bin/screenshot-all-monitors
 .config/omarchy/shell.toml
+.config/kitty/font-size.conf

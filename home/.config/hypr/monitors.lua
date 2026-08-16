@@ -10,8 +10,8 @@
 -- Both panels are 1440p-class at ~110 PPI, not HiDPI, so 1x is right here.
 -- gdk_scale moves in lockstep: at 2 on a 1x display, XWayland GTK/Electron
 -- apps (Spotify) render their entire UI at double size.
-local omarchy_gdk_scale = 2
-local omarchy_monitor_scale = 1.6
+local omarchy_gdk_scale = 1
+local omarchy_monitor_scale = 1
 
 hl.env("GDK_SCALE", tostring(omarchy_gdk_scale))
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy_monitor_scale })
