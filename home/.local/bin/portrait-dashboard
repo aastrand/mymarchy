@@ -63,6 +63,14 @@ SPOTIFY_LAUNCH='uwsm app -- spotify'
 TERM_MATCH='^kitty$'
 TERM_LAUNCH='uwsm app -- kitty'
 
+# On a cold start Firefox restores several windows from its sessionstore, in a
+# stable order. These pick which restored window goes to which screen (1-based).
+# Titles cannot be used instead -- a Firefox window is titled after its active
+# tab, so it changes as soon as you switch tabs.
+# If the two screens come up swapped, flip these.
+FF_MAIN_INDEX=2        # -> ultrawide (ws1)
+FF_PORTRAIT_INDEX=1    # -> portrait  (ws2)
+
 log() { printf '  %s\n' "$*" >&2; }
 
 # Animations make every move play a transition, which is both the visible churn
@@ -189,10 +197,17 @@ geom() {
 # produce. So: start it plain, let the session settle, then top up only if the
 # restore gave fewer than two.
 ensure_two_firefox() {
-  local n before
+  local n before cold=0
+
+  # Order in which restored windows appeared, oldest first. Firefox restores
+  # from its sessionstore in a stable order, so this is reproducible across
+  # reboots -- unlike window titles, which change with the active tab and so
+  # cannot be matched on.
+  FF_ORDER=()
 
   n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
   if (( n == 0 )); then
+    cold=1
     log "firefox not running -- starting it and letting session restore settle"
     setsid $FIREFOX_LAUNCH >/dev/null 2>&1 &
     # Wait for the first window...
@@ -200,14 +215,38 @@ ensure_two_firefox() {
       sleep 0.25
       (( $(addrs_matching "$FIREFOX_MATCH" | wc -l) > 0 )) && break
     done
-    # ...then until the count stops rising, so restored windows are all counted.
-    local last=-1 cur
-    for _ in $(seq 1 40); do
-      cur=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
-      [[ $cur == "$last" ]] && break
+    # ...then until the count has held steady for a good while.
+    #
+    # Restoring a session is slow and lumpy -- a multi-megabyte sessionstore can
+    # leave seconds between one window appearing and the next. Breaking on the
+    # first pair of equal samples mistakes that lull for "finished", concludes
+    # there is one window, and opens a blank one with --new-window. That was the
+    # empty Firefox that kept turning up. Require several consecutive stable
+    # samples instead.
+    local last=-1 cur stable=0 a
+    local need_stable=8    # x0.5s = 4s of no new windows
+    for _ in $(seq 1 60); do
+      # Record any window we have not seen before, preserving arrival order.
+      while read -r a; do
+        [[ -n $a ]] || continue
+        local seen=0 known
+        for known in ${FF_ORDER[@]+"${FF_ORDER[@]}"}; do
+          [[ $known == "$a" ]] && { seen=1; break; }
+        done
+        (( seen )) || FF_ORDER+=("$a")
+      done < <(addrs_matching "$FIREFOX_MATCH")
+
+      cur=${#FF_ORDER[@]}
+      if [[ $cur == "$last" ]]; then
+        stable=$((stable + 1))
+        (( stable >= need_stable )) && break
+      else
+        stable=0
+      fi
       last=$cur
       sleep 0.5
     done
+    log "session restore order: ${#FF_ORDER[@]} window(s)"
     n=$(addrs_matching "$FIREFOX_MATCH" | wc -l)
     log "session restore produced $n window(s)"
   fi
@@ -229,12 +268,37 @@ ensure_two_firefox() {
     n=$now
   done
 
-  # Prefer whatever is already on each screen, so repeat runs do not shuffle
-  # windows between monitors. Anything unplaced fills the gaps.
+  # Prefer whatever is already on each screen, so repeat runs never shuffle
+  # windows between monitors. Only unplaced windows get assigned.
   local on1 on2 rest
   on1=$(addr_on_ws "$FIREFOX_MATCH" "$MAIN_WS")
   on2=$(addr_on_ws "$FIREFOX_MATCH" "$WS")
-  rest=$(addrs_matching "$FIREFOX_MATCH" | grep -vx -e "${on1:-__}" -e "${on2:-__}")
+
+  # Candidates in restore order where known, so a cold start is reproducible.
+  # FF_MAIN_INDEX / FF_PORTRAIT_INDEX pick which restored window lands where;
+  # flip them if the two screens come up swapped.
+  local -a cands=()
+  if (( ${#FF_ORDER[@]} > 0 )); then
+    cands=(${FF_ORDER[@]+"${FF_ORDER[@]}"})
+  else
+    while read -r a; do [[ -n $a ]] && cands+=("$a"); done < <(addrs_matching "$FIREFOX_MATCH")
+  fi
+
+  # On a cold start the knob is authoritative. Firefox drops its restored
+  # windows on whatever workspace happens to be focused, so "already on ws1"
+  # says nothing about which window it is -- honouring it would make the
+  # assignment depend on hyprctl listing order rather than restore order.
+  if (( cold )) && (( ${#cands[@]} >= 2 )); then
+    on1=${cands[$((FF_MAIN_INDEX - 1))]:-${cands[0]}}
+    on2=${cands[$((FF_PORTRAIT_INDEX - 1))]:-${cands[1]}}
+    log "cold start: restored window $FF_MAIN_INDEX -> ws$MAIN_WS, $FF_PORTRAIT_INDEX -> ws$WS"
+  elif [[ -z $on1 && -z $on2 && ${#cands[@]} -ge 2 ]]; then
+    on1=${cands[$((FF_MAIN_INDEX - 1))]:-${cands[0]}}
+    on2=${cands[$((FF_PORTRAIT_INDEX - 1))]:-${cands[1]}}
+    log "cold start: window $FF_MAIN_INDEX -> ws$MAIN_WS, window $FF_PORTRAIT_INDEX -> ws$WS"
+  fi
+
+  rest=$(printf '%s\n' ${cands[@]+"${cands[@]}"} | command grep -vx -e "${on1:-__}" -e "${on2:-__}")
   [[ -z $on1 ]] && { on1=$(echo "$rest" | sed -n 1p); rest=$(echo "$rest" | sed 1d); }
   [[ -z $on2 ]] && on2=$(echo "$rest" | sed -n 1p)
 
@@ -266,6 +330,17 @@ for a in "$TERM_W" "$FF_MAIN"; do
     wait_ws "$a" "$MAIN_WS"
   }
 done
+
+# Terminal on the left, Firefox on the right. Which side each lands on depends
+# on insertion order, so check and swap rather than hope.
+read -r tx _ _ _ <<<"$(geom "$TERM_W")"
+read -r fx _ _ _ <<<"$(geom "$FF_MAIN")"
+if [[ -n ${tx:-} && -n ${fx:-} ]] && (( tx > fx )); then
+  log "terminal is right of firefox -- swapping"
+  dispatch "hl.dsp.focus({ window = \"address:$TERM_W\" })"
+  dispatch 'hl.dsp.window.swap({ direction = "l" })'
+  sleep 0.2
+fi
 
 # --- portrait: gather ----------------------------------------------------
 dispatch "hl.dsp.focus({ monitor = \"$MONITOR\" })"
