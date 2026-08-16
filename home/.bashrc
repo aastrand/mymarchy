@@ -45,14 +45,19 @@ bind 'TAB: complete'                  # fzf's completer needs plain complete, no
 # `-o default` fall through to readline's own filename completion (which keeps
 # trailing slashes, quoting and inline prefix-completion); over it, open fzf.
 FZF_TAB_MIN_CANDIDATES=15
-__fzf_tab_threshold() {
+
+# $1 = compgen flag used to count candidates (f = files, d = dirs)
+# $2 = the fzf completion function to delegate to when over the limit
+__fzf_tab_gate() {
+  local kind=$1 fn=$2
+  shift 2
   local cur expanded count
   cur="${COMP_WORDS[COMP_CWORD]}"
 
   # `**` stays an explicit "use fzf regardless of count" escape hatch
   if [[ $cur == *'**' ]]; then
     local FZF_COMPLETION_TRIGGER='**'
-    __fzf_default_completion "$@"
+    "$fn" "$@"
     return
   fi
 
@@ -63,15 +68,32 @@ __fzf_tab_threshold() {
   fi
 
   eval "expanded=$cur" 2> /dev/null || expanded=$cur
-  count=$(compgen -f -- "$expanded" 2> /dev/null | command grep -c .)
+  count=$(compgen -"$kind" -- "$expanded" 2> /dev/null | command grep -c .)
 
   if (( count <= ${FZF_TAB_MIN_CANDIDATES:-15} )); then
     COMPREPLY=()
     return 0
   fi
-  __fzf_default_completion "$@"
+  "$fn" "$@"
 }
-complete -D -F __fzf_tab_threshold -o default -o bashdefault
+
+__fzf_tab_default() { __fzf_tab_gate f __fzf_default_completion "$@"; }
+complete -D -F __fzf_tab_default -o default -o bashdefault
+
+# The -D default only catches commands with no completer of their own. fzf also
+# registers ~70 commands (cd, vim, git, ls, rm, ...) directly against
+# _fzf_path_completion / _fzf_dir_completion, which bypass it entirely -- that
+# is why `cd Documents/c` still opened a picker over 571 candidates. Rather
+# than re-register each command and have to mirror its individual -o flags,
+# wrap those two functions in place: every current registration goes through
+# the gate, and so does anything fzf adds later. Guarded so that re-sourcing
+# .bashrc does not wrap the wrapper and recurse forever.
+if declare -F _fzf_path_completion > /dev/null && ! declare -F __fzf_tab_orig_path > /dev/null; then
+  eval "__fzf_tab_orig_path() $(declare -f _fzf_path_completion | tail -n +2)"
+  eval "__fzf_tab_orig_dir() $(declare -f _fzf_dir_completion | tail -n +2)"
+  _fzf_path_completion() { __fzf_tab_gate f __fzf_tab_orig_path "$@"; }
+  _fzf_dir_completion() { __fzf_tab_gate d __fzf_tab_orig_dir "$@"; }
+fi
 bind 'set show-all-if-ambiguous off'  # let fzf present the list instead of pre-dumping it
 bind 'set page-completions on'        # paginate the completers fzf does not wrap (git, systemctl)
 bind 'set completion-query-items 100'
