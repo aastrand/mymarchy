@@ -9,6 +9,11 @@ and cooling curves.
 
 > Agents working on this machine: read [AGENTS.md](AGENTS.md) first.
 
+![The screensaver on both monitors — DP-1 mid-effect, DP-2 settled](docs/screensaver.png)
+
+Both monitors, mid-transition: `ttfx` is still animating on DP-1 while DP-2 has
+settled on the wordmark. See `branding/screensaver.txt` in the table below.
+
 ## Why this exists
 
 Omarchy ships good defaults in `/usr/share/omarchy/` and loads your overrides
@@ -77,8 +82,9 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 |------|-----------|
 | `hypr/monitors.lua` | DP-1 pinned to `3440x1440@143.92`; DP-2 rotated portrait |
 | `hypr/looknfeel.lua` | `rounding = 8` |
-| `kitty/kitty.conf` | `font_size 11` |
+| `kitty/kitty.conf` | `font_size 9.0` as written by the size slider, then overridden to `12.0` by `kitty/font-size.conf`; `sync_to_monitor no` for the post-resume freeze |
 | `omarchy/shell.json` | bar/shell configuration |
+| `omarchy/branding/screensaver.txt` | "GLASSPANE" in place of the stock omarchy wordmark, set in Press Start 2P |
 | `git/config` | identity and aliases |
 
 **Tier 2 —** root-owned
