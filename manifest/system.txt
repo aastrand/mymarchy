@@ -4,3 +4,4 @@
 /etc/udev/rules.d/99-wol-rtl8125.rules
 /etc/udev/rules.d/70-vial.rules
 /etc/modules-load.d/vmware.conf
+/etc/modprobe.d/nvidia-power-management.conf
