@@ -56,7 +56,6 @@ gst-plugin-pipewire
 gvfs-mtp
 gvfs-nfs
 gvfs-smb
-herdr
 hyprland
 hyprland-guiutils
 hyprland-preview-share-picker
@@ -74,6 +73,7 @@ lazydocker
 lazygit
 less
 lib32-nvidia-utils
+lib32-vulkan-radeon
 libpulse
 libva-nvidia-driver
 libvips
@@ -87,6 +87,7 @@ llvm
 localsend
 lua51
 luarocks
+lutris
 man-db
 mariadb-libs
 mise
@@ -135,6 +136,7 @@ slurp
 socat
 spotify
 starship
+steam
 sudo
 sushi
 system-config-printer
@@ -153,6 +155,7 @@ tzupdate
 udiskie
 ufw
 ufw-docker
+umu-launcher
 usage
 uwsm
 vivid
