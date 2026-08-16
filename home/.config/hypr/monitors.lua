@@ -1,12 +1,17 @@
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
 -- List current monitors and supported resolutions with: hyprctl monitors all
 
--- Both panels are 1440p-class at ~110 PPI, not HiDPI. Omarchy ships
--- gdk_scale = 2, which targets 4K/retina displays; the manual prescribes 1
--- for 1080p/1440p. At 2, XWayland GTK/Electron apps (Spotify) render their
--- entire UI at double size.
-local omarchy_gdk_scale = 1
-local omarchy_monitor_scale = "auto"
+-- These two are rewritten by `omarchy hyprland monitor scaling` -- the SCALE
+-- row in the display menu, and SUPER+SLASH / SUPER+ALT+SLASH. Leave them as
+-- plain assignments so that keeps working, and make sure the per-monitor
+-- hl.monitor calls below reference omarchy_monitor_scale rather than
+-- hardcoding a number, or the menu silently does nothing.
+--
+-- Both panels are 1440p-class at ~110 PPI, not HiDPI, so 1x is right here.
+-- gdk_scale moves in lockstep: at 2 on a 1x display, XWayland GTK/Electron
+-- apps (Spotify) render their entire UI at double size.
+local omarchy_gdk_scale = 2
+local omarchy_monitor_scale = 1.6
 
 hl.env("GDK_SCALE", tostring(omarchy_gdk_scale))
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy_monitor_scale })
@@ -19,7 +24,7 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy
 -- pointer crosses between them at the same height it left.
 --
 -- Primary ultrawide: pin to 144Hz ("preferred" only picks 100Hz).
-hl.monitor({ output = "DP-1", mode = "3440x1440@143.92", position = "0x510", scale = 1 })
+hl.monitor({ output = "DP-1", mode = "3440x1440@143.92", position = "0x510", scale = omarchy_monitor_scale })
 
 -- Portrait/rotated secondary monitor (transform: 1 = 90°, 3 = 270°).
-hl.monitor({ output = "DP-2", mode = "preferred", position = "3440x0", scale = 1, transform = 1 })
+hl.monitor({ output = "DP-2", mode = "preferred", position = "3440x0", scale = omarchy_monitor_scale, transform = 1 })
