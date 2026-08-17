@@ -2,4 +2,4 @@
 claude = "latest"
 codex = "latest"
 gh = "latest"
-"npm:hunkdiff" = "latest"
+"npm:hunkdiff" = "0.18.2"

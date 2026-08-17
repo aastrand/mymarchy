@@ -105,7 +105,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/systemd/user/rsnapshot-gamma.timer` | Mondays 07:00 |
 | `.config/systemd/user/rsnapshot-delta.timer` | 1st of month 06:30 |
 | `.config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf` | Distinct nicks for the Scarlett's two physical inputs (both shipped as "Scarlett Solo USB", so the menu showed the same name twice); NVIDIA HDMI output disabled |
-| `.config/mise/config.toml` | CLI tooling installed through mise rather than pacman — `claude`, `codex`, `gh`, `hunkdiff`. These appear in **neither** `pacman-explicit.txt` nor `aur-explicit.txt`, so without this file they are recorded nowhere |
+| `.config/mise/config.toml` | CLI tooling installed through mise rather than pacman — **`hunkdiff` is pinned to 0.18.2**, see [Machine notes](#machine-notes) — `claude`, `codex`, `gh`, `hunkdiff`. These appear in **neither** `pacman-explicit.txt` nor `aur-explicit.txt`, so without this file they are recorded nowhere |
 | `.bashrc` | Restores GNU `ls` over Omarchy's eza alias (eza's `-s` breaks `ls -alstr`), repopulates `LS_COLORS`, moves eza to `ll`/`lla`/`llt`; sources `cargo/env` |
 
 **Tier 2a —** root-owned files, copied to `system/`. Never auto-restored;
@@ -183,6 +183,41 @@ check this first:
 ```bash
 tailscale debug prefs | grep -i lanaccess
 ```
+
+**hunkdiff is pinned to 0.18.2 on purpose.** Updating to 0.19.0 is blocked by
+mise's supply-chain trust policy:
+
+```
+trust downgrade for @pierre/theme@2.0.0 (trustPolicy=no-downgrade):
+earlier published version 0.0.20 had provenance attestation but this version
+has no trust evidence
+```
+
+Investigated rather than bypassed. The chain is
+`hunkdiff → @pierre/diffs → @pierre/theme`, and the evidence points at a
+maintainer/CI change rather than tampering:
+
+- the publisher changed at `@pierre/theme` **1.1.0**, not at 2.0.0 — systematic,
+  not one anomalous release
+- `@pierre/diffs` 1.3.4 and 1.3.5 tell the same story, so it is the whole family
+- the new publisher is a **listed maintainer** of the package
+- every version still carries npm registry **signatures**
+- the public repo has matching tags (`diffs-v1.3.5`, `diffs-v1.3.4`, …)
+- `hunkdiff` itself is attested and built by GitHub Actions
+
+0.18.2 depends on `@pierre/diffs@1.2.2`, which predates the change, so pinning
+sidesteps it entirely with no loss. Nothing in 0.19.0 was needed.
+
+Revisit when Pierre restore their trusted-publisher workflow — set the version
+back to `latest` and see whether it resolves. If they never do, the narrowest
+escape hatch is:
+
+```toml
+"npm:hunkdiff" = { version = "latest", trust_policy_excludes = ["@pierre/theme@2.0.0"] }
+```
+
+Do not reach for `mise settings npm.shell_out=true`; that disables the check
+globally.
 
 **Cooling.** An NZXT Kraken X-series pump, an NZXT RGB & Fan Controller
 (3 fans), and an ASUS Aura LED controller, all managed by
