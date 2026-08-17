@@ -88,7 +88,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/hypr/bindings.lua` | `SHIFT+ALT+X` → `portrait-dashboard`; `SUPER+SHIFT+S` reclaimed from Google Maps for region capture; `PRINT` → `screenshot-all-monitors` |
 | `.config/kitty/kitty.conf` | `background_opacity 0.85` + live-tuning binds; 5000-line scrollback; `ctrl+shift+f` scrollback fzf; `alt+1..9` tab jumps |
 | `.config/kitty/font-size.conf` | `font_size 12.0`, included last so it beats the `9.0` that `omarchy display text size` writes into `kitty.conf`. Lets the desktop slider drive GTK and the bar without shrinking the terminal |
-| `.config/omarchy/shell.json` | Bar layout and indicator set, `idle.screensaver = 150` / `idle.lock = 300`, Mullvad region |
+| `.config/omarchy/shell.json` | Bar layout and indicator set, `idle.screensaver = 600` / `idle.lock = 900` (10 min / 15 min; Omarchy ships 150/300), Mullvad region |
 | `.config/omarchy/shell.toml` | `[font] base-size = 12` |
 | `.config/omarchy/branding/screensaver.txt` | "GLASSPANE" in place of the stock omarchy wordmark, set in Press Start 2P — see [Machine notes](#machine-notes) for how it was generated |
 | `.config/omarchy/hooks/post-boot.d/gpu-rgb` | OpenRGB sets the GPU to the machine's warm gold; the only device `coolercontrold` cannot reach |
