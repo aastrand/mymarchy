@@ -98,12 +98,13 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.local/bin/screenshot-all-monitors` | `grim` with no `-g`, to capture the whole layout in one image |
 | `.config/rsnapshot/rsnapshot.conf` | Rolling hardlinked snapshots to the NAS. TAB-separated; `-rt` not `-a` because SMB cannot represent POSIX perms |
 | `.config/rsnapshot/excludes` | Build output, caches, re-fetchable bulk, and secrets — `*.pem`/`*.key`/`.env` are matched *inside* included trees |
+| `.local/bin/rsnapshot-interval` | Runs one rsnapshot interval under `flock` (rsnapshot has a single lockfile for all intervals) and treats "previous interval max not found" as success, since that only means the level below has not filled yet |
 | `.config/systemd/user/rsnapshot@.service` | Runs one rsnapshot interval; `OnFailure=` wires the notifier |
 | `.config/systemd/user/rsnapshot-failure@.service` | Desktop notification when a backup fails, so it is not silent |
-| `.config/systemd/user/rsnapshot-alpha.timer` | 08/12/18/23 daily |
-| `.config/systemd/user/rsnapshot-beta.timer` | daily 07:30 |
-| `.config/systemd/user/rsnapshot-gamma.timer` | Mondays 07:00 |
-| `.config/systemd/user/rsnapshot-delta.timer` | 1st of month 06:30 |
+| `.config/systemd/user/rsnapshot-alpha.timer` | every 6h of uptime (`OnUnitActiveSec`), not wall-clock |
+| `.config/systemd/user/rsnapshot-beta.timer` | every 1d of uptime |
+| `.config/systemd/user/rsnapshot-gamma.timer` | every 1w of uptime |
+| `.config/systemd/user/rsnapshot-delta.timer` | every 30d of uptime |
 | `.config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf` | Distinct nicks for the Scarlett's two physical inputs (both shipped as "Scarlett Solo USB", so the menu showed the same name twice); NVIDIA HDMI output disabled |
 | `.config/mise/config.toml` | CLI tooling installed through mise rather than pacman — **`hunkdiff` is pinned to 0.18.2**, see [Machine notes](#machine-notes) — `claude`, `codex`, `gh`, `hunkdiff`. These appear in **neither** `pacman-explicit.txt` nor `aur-explicit.txt`, so without this file they are recorded nowhere |
 | `.bashrc` | Restores GNU `ls` over Omarchy's eza alias (eza's `-s` breaks `ls -alstr`), repopulates `LS_COLORS`, moves eza to `ll`/`lla`/`llt`; sources `cargo/env` |

@@ -1,0 +1,40 @@
+#!/bin/bash
+# Run one rsnapshot interval, serialised, treating "not enough history yet" as
+# success rather than failure.
+#
+# Two rsnapshot behaviours make a naive `rsnapshot <interval>` wrong to run
+# straight from a systemd unit:
+#
+# 1. It keeps ONE lockfile for every interval, so two running at once makes the
+#    loser die with "Could not write lockfile: File exists". On a desktop that
+#    is routine: every overdue timer fires at boot. flock makes the second
+#    interval wait instead, which is also what rsnapshot wants -- intervals are
+#    meant to run in sequence.
+#
+# 2. A higher interval rotates by promoting the *oldest* snapshot of the one
+#    below it: beta.0 comes from alpha.7 (retain alpha 8). Until alpha has
+#    filled, beta exits non-zero with
+#      "Did not find previous interval max (.../alpha.7), refusing to rotate"
+#    That is not a failure, it is "no history to promote yet" -- but it would
+#    fire the failure notification daily until alpha fills, which is how people
+#    learn to ignore backup alerts. Only this exact message is swallowed;
+#    everything else still fails loudly.
+set -uo pipefail
+
+INTERVAL=${1:?usage: rsnapshot-interval <alpha|beta|gamma|delta>}
+CONF="$HOME/.config/rsnapshot/rsnapshot.conf"
+LOCK="$HOME/.local/state/rsnapshot/run.lock"
+
+mkdir -p "$(dirname "$LOCK")"
+
+out=$(flock "$LOCK" /usr/bin/rsnapshot -c "$CONF" "$INTERVAL" 2>&1)
+rc=$?
+[[ -n $out ]] && printf '%s\n' "$out"
+
+if (( rc != 0 )) && grep -qF 'Did not find previous interval max' <<<"$out"; then
+  echo "note: the interval below has not filled yet, so there is nothing to" \
+       "rotate into $INTERVAL. Not a failure; this resolves itself."
+  exit 0
+fi
+
+exit $rc

@@ -4,11 +4,16 @@ Documentation=man:rsnapshot(1)
 # The NAS is an on-demand automount; rsnapshot refuses to run if it is absent
 # (no_create_root), so a missing NAS fails loudly instead of quietly writing a
 # "backup" to the local disk.
-
 OnFailure=rsnapshot-failure@%i.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/rsnapshot -c %h/.config/rsnapshot/rsnapshot.conf %i
+# rsnapshot keeps ONE lockfile for all intervals, so two of them running at
+# once makes the loser die with "Could not write lockfile: File exists". That
+# is not hypothetical: on a desktop, every overdue timer fires at boot, and
+# alpha and beta collided the first time the machine came back. flock makes the
+# second interval wait for the first rather than fail, which is also what
+# rsnapshot wants -- intervals are meant to run in sequence, never in parallel.
+ExecStart=%h/.local/bin/rsnapshot-interval %i
 Nice=10
 IOSchedulingClass=idle
