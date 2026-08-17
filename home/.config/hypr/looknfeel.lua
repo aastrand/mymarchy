@@ -30,6 +30,21 @@ hl.config({
   },
 })
 
+-- Smart gaps: drop the gaps, border and rounding when a workspace holds a
+-- single tiled window, so one maximised window sits edge to edge.
+--
+-- w[tv1] is a workspace selector: workspaces with exactly one tiled, visible
+-- window. It re-evaluates live, so gaps come back the moment a second window
+-- opens.
+--
+-- Both halves are needed. The workspace rule removes the gaps; the window rule
+-- removes the per-window border and corner rounding, which the workspace rule
+-- cannot reach. Property names verified against Hyprland 0.56.2: the match key
+-- is `float`, not `floating`, and `rounding` is valid on a window rule but not
+-- on a workspace rule.
+hl.workspace_rule({ workspace = "w[tv1]", gaps_in = 0, gaps_out = 0, border_size = 0 })
+o.window({ workspace = "w[tv1]", float = false }, { border_size = 0, rounding = 0 })
+
 -- Dwindle picks its split axis by comparing width * multiplier against
 -- height, so this one global knob has to serve a 3440x1440 ultrawide and a
 -- 1440x2560 portrait screen at once. Their shapes are far enough apart that

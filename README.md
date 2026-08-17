@@ -83,7 +83,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 |------|-----------|
 | `.config/hypr/hyprland.lua` | `OMARCHY_SCREENSHOT_DIR` into `Pictures/Screenshots`; workspaces 1/2 pinned to DP-1/DP-2 so the dashboard layout can rely on ws2; float rules for `krankulator` and `krengine` |
 | `.config/hypr/monitors.lua` | Both scales forced to 1 — the panels are ~110 PPI, not HiDPI, and `gdk_scale = 2` doubled XWayland UIs. DP-1 pinned to `3440x1440@143.92` (`preferred` picks 100 Hz) at `y=510` to centre it against DP-2, which is rotated with `transform = 1` |
-| `.config/hypr/looknfeel.lua` | `rounding = 8`; blur on (Omarchy ships it off) to pair with kitty's translucent background; `dwindle.split_width_multiplier = 0.85` so the portrait screen stacks instead of splitting into 720px columns |
+| `.config/hypr/looknfeel.lua` | `rounding = 8`; smart gaps via the `w[tv1]` workspace selector (gaps, border and rounding drop when a workspace holds one tiled window); blur on (Omarchy ships it off) to pair with kitty's translucent background; `dwindle.split_width_multiplier = 0.85` so the portrait screen stacks instead of splitting into 720px columns |
 | `.config/hypr/input.lua` | MX Master 3: `sensitivity = 0.1`, `accel_profile = "flat"` |
 | `.config/hypr/bindings.lua` | `SHIFT+ALT+X` → `portrait-dashboard`; `SUPER+SHIFT+S` reclaimed from Google Maps for region capture; `PRINT` → `screenshot-all-monitors` |
 | `.config/kitty/kitty.conf` | `background_opacity 0.85` + live-tuning binds; 5000-line scrollback; `ctrl+shift+f` scrollback fzf; `alt+1..9` tab jumps |
