@@ -101,7 +101,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.local/bin/rsnapshot-interval` | Runs one rsnapshot interval under `flock` (rsnapshot has a single lockfile for all intervals) and treats "previous interval max not found" as success, since that only means the level below has not filled yet |
 | `.config/systemd/user/rsnapshot@.service` | Runs one rsnapshot interval; `OnFailure=` wires the notifier |
 | `.config/systemd/user/rsnapshot-failure@.service` | Desktop notification when a backup fails, so it is not silent |
-| `.config/systemd/user/rsnapshot-alpha.timer` | every 6h of uptime (`OnUnitActiveSec`), not wall-clock |
+| `.config/systemd/user/rsnapshot-alpha.timer` | every 2h of uptime (`OnUnitActiveSec`), not wall-clock |
 | `.config/systemd/user/rsnapshot-beta.timer` | every 1d of uptime |
 | `.config/systemd/user/rsnapshot-gamma.timer` | every 1w of uptime |
 | `.config/systemd/user/rsnapshot-delta.timer` | every 30d of uptime |
@@ -144,8 +144,17 @@ more than 875MB. Verified: two snapshots, same inode, `du` of both together
 equals one. Browse them in File Station under `Backups/glasspane/alpha.0`,
 `alpha.1`, `beta.0` … newest is always `.0`.
 
-Retention mirrors the Back In Time policy from Ubuntu: all snapshots for ~2
-days, then daily for 7, weekly for 4, monthly for 24.
+Retention: alpha every 2h of uptime x 12 kept = 24h of fine-grained history,
+then daily 7, weekly 4, monthly 24. Only alpha copies data; the higher levels
+promote the oldest snapshot of the level below, which is a directory rename.
+
+Alpha's interval is set against the actual threat -- accidentally deleting
+something -- rather than inherited from the old Back In Time schedule. A run
+costs ~80s, almost all of it rsync stat-ing files over SMB, and a snapshot costs
+almost no space because unchanged files are hardlinks. So the interval is
+bounded by diminishing returns, not by cost: 2h halves the worst case against
+6h, and going to 1h would only protect files created *and* destroyed inside the
+same hour.
 
 Why SMB rather than SSH or the rsync daemon — all three were tried:
 
