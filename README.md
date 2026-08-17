@@ -219,6 +219,26 @@ escape hatch is:
 Do not reach for `mise settings npm.shell_out=true`; that disables the check
 globally.
 
+**MTGO in VMware: the guest resolution is calibrated, not arbitrary.** The
+Windows guest runs at an odd size (~3426x1379) on purpose. VMware maps clicks
+as though the guest framebuffer were centred in its display area, so any
+mismatch between guest resolution and that area shows up as a pointer offset —
+clicks landing a few pixels off — and, with "Center guest" enabled, as visible
+letterboxing. Matching the guest exactly to VMware's inner area makes the
+padding zero, which fixes both.
+
+That area is the Hyprland window minus VMware's own menu/status chrome, so the
+calibration depends on the window size. **VMware alone on its workspace gets the
+full width via smart gaps**; open a second window there and the gaps return, the
+window shrinks ~20px, and the offset comes back looking like a regression from
+nowhere. Keep it alone on its workspace, or recalibrate.
+
+Fullscreen is worse rather than better here: there are open upstream bugs in
+this exact combination, [Hyprland #8363](https://github.com/hyprwm/Hyprland/issues/8363)
+and [#2561](https://github.com/hyprwm/Hyprland/issues/2561), and
+[KDE sees the same cursor offset](https://bugs.kde.org/show_bug.cgi?id=427060)
+on VMware — so it is a Wayland/VMware interaction, not an Omarchy one.
+
 **Cooling.** An NZXT Kraken X-series pump, an NZXT RGB & Fan Controller
 (3 fans), and an ASUS Aura LED controller, all managed by
 [CoolerControl](https://docs.coolercontrol.org/). `coolercontrold` is enabled
