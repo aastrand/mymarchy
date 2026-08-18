@@ -15,5 +15,6 @@ rsnapshot-alpha.timer
 rsnapshot-beta.timer
 rsnapshot-delta.timer
 rsnapshot-gamma.timer
+sway-audio-idle-inhibit.service
 wireplumber.service
 xdg-user-dirs.service

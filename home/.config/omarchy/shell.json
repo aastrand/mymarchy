@@ -69,10 +69,6 @@
     "position": "top",
     "transparent": false
   },
-  "idle": {
-    "lock": 900,
-    "screensaver": 600
-  },
   "plugins": [],
   "version": 1
 }
