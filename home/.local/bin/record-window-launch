@@ -162,10 +162,29 @@ w, h = min(w, mw - x), min(h, mh - y)
 print(x, y, w - w % 2, h - h % 2)' "$WX" "$WY" "$WW" "$WH" "$MON_X" "$MON_Y" "$MON_W" "$MON_H" "$PAD")
 
   echo "cropping to ${CW}x${CH}+${CX}+${CY}"
-  enc=(-c:v libx264 -crf 18 -preset medium)
-  ffmpeg -hide_banner -loglevel error -y -i "$RAW" \
-    -filter:v "crop=${CW}:${CH}:${CX}:${CY}" "${enc[@]}" -c:a copy "$OUT" \
-    || die "crop failed; raw recording kept at $RAW"
+
+  # Cropping has to re-encode, and on a long capture a software encode is slow
+  # enough to look like a hang -- especially with ffmpeg silenced. NVENC turns
+  # it into seconds on this box; libx264 stays as the fallback.
+  if ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc=size=64x64:rate=5 \
+       -frames:v 2 -c:v h264_nvenc -f null - >/dev/null 2>&1; then
+    enc=(-c:v h264_nvenc -preset p5 -cq 21)
+  else
+    enc=(-c:v libx264 -crf 18 -preset veryfast)
+  fi
+
+  # An interrupted encode leaves an mp4 with no moov atom, which looks exactly
+  # like a corrupt recording. Throw that away rather than leave it sitting in
+  # ~/Videos, and keep the raw so the take is not lost.
+  trap 'rm -f "$OUT"; echo; echo "interrupted -- raw capture kept at $RAW" >&2; exit 130' INT TERM
+
+  # -stats on stderr so a long crop shows progress instead of looking hung.
+  if ! ffmpeg -hide_banner -loglevel warning -stats -y -i "$RAW" \
+       -filter:v "crop=${CW}:${CH}:${CX}:${CY}" "${enc[@]}" -c:a copy "$OUT"; then
+    rm -f "$OUT"
+    die "crop failed; raw recording kept at $RAW"
+  fi
+  trap - INT TERM
   rm -f "$RAW"
 else
   mv "$RAW" "$OUT"
