@@ -25,6 +25,7 @@ AUDIO=false
 PAD=0
 CROP=true
 DURATION=0
+WINDOW_TIMEOUT=300
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -38,6 +39,7 @@ while (($#)); do
     --pad)         PAD=$2; shift 2 ;;
     --no-crop)     CROP=false; shift ;;
     --duration)    DURATION=$2; shift 2 ;;
+    --window-timeout) WINDOW_TIMEOUT=$2; shift 2 ;;
     --)            shift; break ;;
     -h|--help)     sed -n '2,18p' "$0" | sed 's/^# \?//'; exit 0 ;;
     *)             die "unknown option: $1 (put the command after --)" ;;
@@ -62,7 +64,7 @@ ms = json.load(sys.stdin)
 print(next((m["name"] for m in ms if m.get("focused")), ms[0]["name"]))')
 fi
 
-# Monitor origin in Hyprland'"'"'s logical space, so window coordinates (which are
+# Monitor origin in Hyprland's logical space, so window coordinates (which are
 # global) can be made relative to the recorded frame.
 read -r MON_X MON_Y MON_W MON_H MON_SCALE MON_TRANSFORM < <(hyprctl monitors -j | python3 -c '
 import sys, json
@@ -111,11 +113,17 @@ sleep 0.2
 "$@" &
 APP_PID=$!
 
-# Find the window this launch created, then let its geometry settle -- windows
-# often resize once or twice on the first frames.
+# Find the window this launch created. There is no useful fixed deadline here:
+# `cargo run` may compile for a minute before anything is drawn, and a hard
+# 15s cutoff meant the window arrived after the search had already given up,
+# silently downgrading the result to an uncropped full-monitor capture. Keep
+# looking for as long as the program is alive, capped by --window-timeout so a
+# never-appearing window cannot wedge the run.
 GEOM=""
-for _ in $(seq 1 150); do
-  sleep 0.1
+window_deadline=$(( SECONDS + WINDOW_TIMEOUT ))
+while (( SECONDS < window_deadline )); do
+  kill -0 "$APP_PID" 2>/dev/null || break
+  sleep 0.2
   GEOM=$(hyprctl clients -j | python3 -c '
 import sys, json, re
 before = set(filter(None, sys.argv[1].split("\n")))
