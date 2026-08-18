@@ -1,4 +1,3 @@
 chatgpt-desktop
 coolercontrol
-sway-audio-idle-inhibit-git
 vmware-workstation

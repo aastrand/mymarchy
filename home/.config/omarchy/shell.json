@@ -70,5 +70,9 @@
     "transparent": false
   },
   "plugins": [],
-  "version": 1
+  "version": 1,
+  "idle": {
+    "screensaver": 300,
+    "lock": 600
+  }
 }
