@@ -1,0 +1,174 @@
+#!/bin/bash
+# record-window-launch -- record a window from its very first frame.
+#
+# Recording a window directly cannot capture its own appearance: gsr needs a
+# capture target, and the window does not exist until after it has drawn. The
+# geometry is not known in advance either, so a fixed -region cannot be aimed
+# at it beforehand.
+#
+# So this records the whole monitor starting *before* the program launches,
+# then discovers where the window landed and crops to it afterwards. Frame 0 is
+# already on disk by the time the window exists; the crop is just bookkeeping.
+#
+#   record-window-launch -- krengine
+#   record-window-launch -o ~/Videos/demo.mp4 -c '^krengine$' -- krengine
+#   record-window-launch --audio --pad 8 -- mpv --fullscreen clip.mkv
+#
+# Recording runs until the launched program exits, or --duration seconds.
+set -uo pipefail
+
+OUT=""
+MONITOR=""
+MATCH_CLASS=""
+MATCH_TITLE=""
+AUDIO=false
+PAD=0
+CROP=true
+DURATION=0
+
+die() { echo "error: $*" >&2; exit 1; }
+
+while (($#)); do
+  case $1 in
+    -o|--output)   OUT=$2; shift 2 ;;
+    -m|--monitor)  MONITOR=$2; shift 2 ;;
+    -c|--class)    MATCH_CLASS=$2; shift 2 ;;
+    -t|--title)    MATCH_TITLE=$2; shift 2 ;;
+    --audio)       AUDIO=true; shift ;;
+    --pad)         PAD=$2; shift 2 ;;
+    --no-crop)     CROP=false; shift ;;
+    --duration)    DURATION=$2; shift 2 ;;
+    --)            shift; break ;;
+    -h|--help)     sed -n '2,18p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    *)             die "unknown option: $1 (put the command after --)" ;;
+  esac
+done
+
+(($#)) || die "no command given; put it after --"
+
+command -v gpu-screen-recorder >/dev/null || die "gpu-screen-recorder not installed"
+command -v ffmpeg >/dev/null || die "ffmpeg not installed (needed for the crop)"
+
+: "${OUT:=$HOME/Videos/$(basename "$1")-$(date +%Y%m%d-%H%M%S).mp4}"
+mkdir -p "$(dirname "$OUT")"
+RAW=$(mktemp --suffix=.mp4 -p "${XDG_RUNTIME_DIR:-/tmp}" recwin-XXXX)
+
+# Default to the monitor the pointer is on, which is where a new window
+# normally opens.
+if [[ -z $MONITOR ]]; then
+  MONITOR=$(hyprctl monitors -j | python3 -c '
+import sys, json
+ms = json.load(sys.stdin)
+print(next((m["name"] for m in ms if m.get("focused")), ms[0]["name"]))')
+fi
+
+# Monitor origin in Hyprland'"'"'s logical space, so window coordinates (which are
+# global) can be made relative to the recorded frame.
+read -r MON_X MON_Y MON_W MON_H MON_SCALE MON_TRANSFORM < <(hyprctl monitors -j | python3 -c '
+import sys, json
+name = sys.argv[1]
+m = next(m for m in json.load(sys.stdin) if m["name"] == name)
+print(m["x"], m["y"], m["width"], m["height"], m["scale"], m["transform"])' "$MONITOR")
+
+# hyprctl reports a monitor's panel dimensions, not its post-rotation logical
+# size: the portrait DP-2 comes back as 2560x1440 while windows are laid out in
+# a 1440x2560 space. The odd transforms are the quarter turns, so swap there or
+# the clamp below silently truncates a tall window (1390px tall became 892).
+if (( MON_TRANSFORM % 2 == 1 )); then
+  read -r MON_W MON_H <<<"$MON_H $MON_W"
+fi
+
+audio_args=()
+$AUDIO && audio_args=(-a default_output -ac aac)
+
+# Snapshot existing windows so the new one can be told apart from them.
+before=$(hyprctl clients -j | python3 -c 'import sys,json; print("\n".join(c["address"] for c in json.load(sys.stdin)))' | sort)
+
+echo "recording $MONITOR -> $(basename "$OUT")"
+gpu-screen-recorder -w "$MONITOR" -k auto -f 60 -fm cfr -fallback-cpu-encoding yes \
+  -o "$RAW" "${audio_args[@]}" >/dev/null 2>&1 &
+GSR_PID=$!
+
+cleanup() {
+  kill -0 "$GSR_PID" 2>/dev/null && kill -SIGINT "$GSR_PID" 2>/dev/null
+  wait "$GSR_PID" 2>/dev/null
+}
+trap 'cleanup; rm -f "$RAW"; exit 130' INT TERM
+
+# Do not launch until frames are actually being written. Waiting for the file
+# to exist is not enough -- gsr creates it before the first frame lands, and
+# launching into that gap is exactly what loses frame 0.
+size_prev=-1
+for _ in $(seq 1 100); do
+  sleep 0.1
+  kill -0 "$GSR_PID" 2>/dev/null || die "gpu-screen-recorder exited early"
+  size_now=$(stat -c %s "$RAW" 2>/dev/null || echo 0)
+  (( size_now > 0 && size_now != size_prev )) && break
+  size_prev=$size_now
+done
+sleep 0.2
+
+"$@" &
+APP_PID=$!
+
+# Find the window this launch created, then let its geometry settle -- windows
+# often resize once or twice on the first frames.
+GEOM=""
+for _ in $(seq 1 150); do
+  sleep 0.1
+  GEOM=$(hyprctl clients -j | python3 -c '
+import sys, json, re
+before = set(filter(None, sys.argv[1].split("\n")))
+cls, title = sys.argv[2], sys.argv[3]
+for c in json.load(sys.stdin):
+    if c["address"] in before: continue
+    if cls and not re.search(cls, c.get("class") or ""): continue
+    if title and not re.search(title, c.get("title") or ""): continue
+    if c["size"][0] <= 1 or c["size"][1] <= 1: continue
+    print(*c["at"], *c["size"]); break
+' "$before" "$MATCH_CLASS" "$MATCH_TITLE")
+  [[ -n $GEOM ]] && break
+done
+
+if [[ -n $GEOM ]]; then
+  read -r WX WY WW WH <<<"$GEOM"
+  echo "window at ${WX},${WY} size ${WW}x${WH}"
+else
+  echo "note: no new window matched; keeping the full monitor frame" >&2
+  CROP=false
+fi
+
+if (( DURATION > 0 )); then
+  sleep "$DURATION"
+else
+  wait "$APP_PID" 2>/dev/null
+fi
+
+cleanup
+trap - INT TERM
+
+[[ -s $RAW ]] || die "recording produced nothing"
+
+if $CROP && [[ -n $GEOM ]]; then
+  # Window coordinates are global; the recorded frame starts at the monitor
+  # origin. Clamp to the frame and keep dimensions even for the encoder.
+  read -r CX CY CW CH < <(python3 -c '
+import sys
+wx, wy, ww, wh, mx, my, mw, mh, pad = map(int, sys.argv[1:])
+x, y = wx - mx - pad, wy - my - pad
+w, h = ww + 2 * pad, wh + 2 * pad
+x, y = max(0, x), max(0, y)
+w, h = min(w, mw - x), min(h, mh - y)
+print(x, y, w - w % 2, h - h % 2)' "$WX" "$WY" "$WW" "$WH" "$MON_X" "$MON_Y" "$MON_W" "$MON_H" "$PAD")
+
+  echo "cropping to ${CW}x${CH}+${CX}+${CY}"
+  enc=(-c:v libx264 -crf 18 -preset medium)
+  ffmpeg -hide_banner -loglevel error -y -i "$RAW" \
+    -filter:v "crop=${CW}:${CH}:${CX}:${CY}" "${enc[@]}" -c:a copy "$OUT" \
+    || die "crop failed; raw recording kept at $RAW"
+  rm -f "$RAW"
+else
+  mv "$RAW" "$OUT"
+fi
+
+echo "saved $OUT"

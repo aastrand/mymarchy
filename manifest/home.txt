@@ -28,3 +28,4 @@
 .config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf
 .config/mise/config.toml
 .local/bin/rsnapshot-interval
+.local/bin/record-window-launch
