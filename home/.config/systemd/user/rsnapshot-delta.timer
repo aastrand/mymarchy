@@ -1,15 +1,13 @@
 [Unit]
-Description=rsnapshot delta (monthly)
+Description=rsnapshot delta (monthly, wall-clock)
 
 [Timer]
-# Measured from the last run rather than the wall clock, so a machine that is
-# switched off still gets its rotations -- paced by uptime instead of by luck.
-OnUnitActiveSec=30d
-# Catch up after boot, staggered per interval so overdue timers do not all
-# stampede at once the way they did under OnCalendar.
-OnBootSec=55min
+# Wall-clock rather than uptime -- see rsnapshot-alpha.timer for why the
+# OnUnitActiveSec/OnBootSec pair silently skipped runs across suspend.
+OnCalendar=*-*-01 04:00:00
 Persistent=true
 RandomizedDelaySec=5m
+
 Unit=rsnapshot@delta.service
 
 [Install]
