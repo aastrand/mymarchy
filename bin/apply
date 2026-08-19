@@ -40,16 +40,21 @@ cat <<'NOTE'
        pacman -S --needed - < system/packages/pacman-explicit.txt
        yay    -S --needed - < system/packages/aur-explicit.txt
 
-  2. Root-owned config — copy by hand, then restart the owning service:
+  2. Omarchy shell plugins — reinstall from their upstream repos:
+       cut -f2 system/packages/omarchy-plugins.txt \
+         | while read -r url; do omarchy plugin add "$url" --yes; done
+     shell.json already carries which are enabled and how they are configured.
+
+  3. Root-owned config — copy by hand, then restart the owning service:
        sudo cp system/etc/coolercontrol/config.toml /etc/coolercontrol/
        sudo systemctl restart coolercontrold
 
-  3. Services — compare against system/systemd/enabled-units.txt and
+  4. Services — compare against system/systemd/enabled-units.txt and
      enable what this machine actually needs.
 
-  4. fstab — system/etc/fstab.reference is REFERENCE ONLY. Never copy it
+  5. fstab — system/etc/fstab.reference is REFERENCE ONLY. Never copy it
      onto a new machine; the UUIDs belong to different disks.
 
-  5. Reload Hyprland:
+  6. Reload Hyprland:
        hyprctl reload && hyprctl configerrors
 NOTE

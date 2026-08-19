@@ -40,6 +40,23 @@ pacman -Qqen > system/packages/pacman-explicit.txt   # official repos, explicitl
 pacman -Qqem > system/packages/aur-explicit.txt      # foreign/AUR, explicitly installed
 echo "    $(wc -l < system/packages/pacman-explicit.txt) official, $(wc -l < system/packages/aur-explicit.txt) AUR"
 
+echo "==> omarchy shell plugins"
+# Plugins are git clones managed by `omarchy plugin add/update/remove`, so the
+# source is deliberately NOT vendored here -- copying it in would fight
+# `omarchy plugin update` and drag a multi-megabyte preview image into the repo
+# for no benefit. Record what to reinstall instead, the way packages are handled.
+# Which plugins are *enabled*, and their per-plugin settings, already ride along
+# in home/.config/omarchy/shell.json.
+: > system/packages/omarchy-plugins.txt
+if [[ -d "$HOME/.config/omarchy/plugins" ]]; then
+  for plugin in "$HOME/.config/omarchy/plugins"/*/; do
+    [[ -d $plugin ]] || continue
+    printf '%s\t%s\n' "$(basename "$plugin")" \
+      "$(git -C "$plugin" remote get-url origin 2>/dev/null || echo 'NOT-GIT-MANAGED')"
+  done | sort > system/packages/omarchy-plugins.txt
+fi
+echo "    $(wc -l < system/packages/omarchy-plugins.txt) plugin(s)"
+
 echo "==> enabled systemd units"
 systemctl list-unit-files --state=enabled --no-pager --no-legend \
   | awk '{print $1}' | sort > system/systemd/enabled-units.txt

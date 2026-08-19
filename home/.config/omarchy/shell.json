@@ -71,10 +71,8 @@
   },
   "plugins": [
     {
-      "id": "vbrosseau.alttab"
-    },
-    {
-      "id": "io.github.sirjul1337.lock-explorer"
+      "id": "io.github.sirjul1337.lock-explorer",
+      "design": "poster"
     }
   ],
   "version": 1,
@@ -83,7 +81,8 @@
     "lock": 600
   },
   "disabledPlugins": [
-    "omarchy.lock"
+    "omarchy.lock",
+    "omarchy.reminders"
   ],
   "cloneSourceRestores": [
     "io.github.sirjul1337.lock-explorer"
