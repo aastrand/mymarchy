@@ -72,11 +72,20 @@
   "plugins": [
     {
       "id": "vbrosseau.alttab"
+    },
+    {
+      "id": "io.github.sirjul1337.lock-explorer"
     }
   ],
   "version": 1,
   "idle": {
     "screensaver": 300,
     "lock": 600
-  }
+  },
+  "disabledPlugins": [
+    "omarchy.lock"
+  ],
+  "cloneSourceRestores": [
+    "io.github.sirjul1337.lock-explorer"
+  ]
 }
