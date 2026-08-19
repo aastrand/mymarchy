@@ -148,6 +148,7 @@ tesseract-data-eng
 tldr
 tmux
 tobi-try
+transmission-gtk
 tree-sitter-cli
 ttf-ia-writer
 ttf-jetbrains-mono-nerd-basic

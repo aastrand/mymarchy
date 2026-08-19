@@ -43,3 +43,13 @@ o.bind("PRINT", "Screenshot all monitors", "screenshot-all-monitors")
 -- o.bind("SUPER + SHIFT + S", nil, "omarchy-capture-screenshot")
 -- o.bind("SUPER + H", nil, "voxtype record toggle")
 -- o.bind("SUPER + PERIOD", nil, "omarchy-shell shell toggle omarchy.emojis")
+
+-- hyprland-alttab: a window switcher overlay on ALT+TAB and SUPER+TAB.
+-- repeating = true so holding the modifier and tapping TAB walks the list
+-- instead of firing once. The layer rule drops the open animation, which
+-- otherwise fades the overlay in on every press.
+hl.unbind("ALT + TAB")
+o.bind("ALT + TAB", nil, hl.dsp.global("omarchy-alttab:next"), { repeating = true })
+hl.unbind("SUPER + TAB")
+o.bind("SUPER + TAB", nil, hl.dsp.global("omarchy-alttab:next"), { repeating = true })
+hl.layer_rule({ match = { namespace = "omarchy-alttab" }, no_anim = true })

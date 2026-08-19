@@ -16,7 +16,7 @@
           "format": "dddd HH:mm",
           "formatAlt": "d MMMM 'W'ww yyyy",
           "id": "omarchy.clock",
-          "verticalFormat": "HH\n\u2014\nmm"
+          "verticalFormat": "HH\n—\nmm"
         },
         {
           "id": "omarchy.keyboard-layout"
@@ -69,7 +69,11 @@
     "position": "top",
     "transparent": false
   },
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "vbrosseau.alttab"
+    }
+  ],
   "version": 1,
   "idle": {
     "screensaver": 300,
