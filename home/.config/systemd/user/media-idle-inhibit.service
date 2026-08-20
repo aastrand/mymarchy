@@ -1,5 +1,5 @@
 [Unit]
-Description=Keep Omarchy awake while Firefox is playing video
+Description=Keep Omarchy awake during allowlisted video playback
 After=graphical-session.target
 PartOf=graphical-session.target
 

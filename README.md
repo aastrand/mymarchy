@@ -97,7 +97,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.local/bin/portrait-dashboard` | Rebuilds the two-monitor window layout; replaces the Ubuntu-era `restore_desktop.sh` |
 | `.local/bin/screenshot-all-monitors` | `grim` with no `-g`, to capture the whole layout in one image |
 | `.local/bin/record-window-launch` | Records a newly launched window from frame zero by starting a full-monitor capture first, then cropping to the discovered window geometry; optional desktop audio |
-| `.local/bin/media-idle-inhibit` | Watches Firefox MPRIS playback state and enables Omarchy Stay Awake only while Firefox reports `Playing`; raw audio streams and Spotify are deliberately ignored |
+| `.local/bin/media-idle-inhibit` | Watches MPRIS playback state; allows YouTube, Twitch and Netflix in Firefox plus local mpv playback, while ignoring Spotify and arbitrary audio streams |
 | `.config/systemd/user/media-idle-inhibit.service` | Runs the Firefox media idle helper with the graphical session and restarts it on failure |
 | `.config/rsnapshot/rsnapshot.conf` | Rolling hardlinked snapshots to the NAS. TAB-separated; `-rt` not `-a` because SMB cannot represent POSIX perms |
 | `.config/rsnapshot/excludes` | Build output, caches, re-fetchable bulk, and secrets — `*.pem`/`*.key`/`.env` are matched *inside* included trees |
