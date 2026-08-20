@@ -1,1 +1,2 @@
+io.github.edgarsilva.power-button	https://github.com/edgarsilva/omarchy-power-button.git
 io.github.sirjul1337.lock-explorer	https://github.com/SirJul1337/omarchy-lock-explorer.git

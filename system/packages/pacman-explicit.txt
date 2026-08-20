@@ -112,6 +112,7 @@ omarchy-emacs
 omarchy-keyring
 omarchy-nvim
 omarchy-settings
+openai-codex
 openbsd-netcat
 openrgb
 pacman-contrib

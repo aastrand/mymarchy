@@ -13,7 +13,7 @@
           ]
         },
         {
-          "format": "dddd HH:mm",
+          "format": "MMM d  HH:mm",
           "formatAlt": "d MMMM 'W'ww yyyy",
           "id": "omarchy.clock",
           "verticalFormat": "HH\n—\nmm"
@@ -63,6 +63,9 @@
         },
         {
           "id": "omarchy.power"
+        },
+        {
+          "id": "io.github.edgarsilva.power-button"
         }
       ]
     },
