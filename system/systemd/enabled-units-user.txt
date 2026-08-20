@@ -2,6 +2,7 @@ bt-agent.service
 emacs.service
 gnome-keyring-daemon.socket
 hyprmoncfgd.service
+media-idle-inhibit.service
 omarchy-crash-watch.service
 omarchy-fcitx5.service
 omarchy-migrate-notify.service

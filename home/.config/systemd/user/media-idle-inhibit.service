@@ -1,0 +1,13 @@
+[Unit]
+Description=Keep Omarchy awake while Firefox is playing video
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/media-idle-inhibit
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

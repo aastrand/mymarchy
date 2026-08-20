@@ -29,3 +29,5 @@
 .config/mise/config.toml
 .local/bin/rsnapshot-interval
 .local/bin/record-window-launch
+.local/bin/media-idle-inhibit
+.config/systemd/user/media-idle-inhibit.service

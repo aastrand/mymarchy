@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Keep Omarchy awake while Firefox explicitly reports Playing over
+# MPRIS. Raw PipeWire activity is deliberately ignored: VMware and krengine
+# keep streams open while idle and would otherwise suppress locking forever.
+
+readonly OMARCHY_STATE="$HOME/.local/state/omarchy/indicators/stay-awake"
+readonly STATE_DIR="$HOME/.local/state/media-idle-inhibit"
+readonly OWNED_STATE="$STATE_DIR/owns-stay-awake"
+
+mkdir -p "$STATE_DIR"
+
+media_is_playing() {
+  local player status
+
+  while read -r player; do
+    [[ -n "$player" ]] || continue
+    status=$(busctl --user get-property \
+      "$player" \
+      /org/mpris/MediaPlayer2 \
+      org.mpris.MediaPlayer2.Player \
+      PlaybackStatus 2>/dev/null || true)
+    [[ "$status" == 's "Playing"' ]] && return 0
+  done < <(
+    busctl --user list --no-legend 2>/dev/null \
+      | awk '$1 ~ /^org\.mpris\.MediaPlayer2\.firefox(\.|$)/ { print $1 }'
+  )
+
+  return 1
+}
+
+release_owned_inhibit() {
+  if [[ -e "$OWNED_STATE" ]]; then
+    omarchy toggle idle allow-idle >/dev/null
+    rm -f "$OWNED_STATE"
+  fi
+}
+
+trap release_owned_inhibit EXIT
+trap 'exit 0' INT TERM
+
+while true; do
+  if media_is_playing; then
+    if [[ ! -e "$OMARCHY_STATE" ]]; then
+      omarchy toggle idle stay-awake >/dev/null
+      touch "$OWNED_STATE"
+    fi
+  else
+    release_owned_inhibit
+  fi
+
+  sleep 2
+done

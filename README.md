@@ -88,7 +88,7 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/hypr/bindings.lua` | `SHIFT+ALT+X` → `portrait-dashboard`; `SUPER+SHIFT+S` reclaimed from Google Maps for region capture; `PRINT` → `screenshot-all-monitors` |
 | `.config/kitty/kitty.conf` | `background_opacity 0.85` + live-tuning binds; 5000-line scrollback; `ctrl+shift+f` scrollback fzf; `alt+1..9` tab jumps |
 | `.config/kitty/font-size.conf` | `font_size 12.0`, included last so it beats the `9.0` that `omarchy display text size` writes into `kitty.conf`. Lets the desktop slider drive GTK and the bar without shrinking the terminal |
-| `.config/omarchy/shell.json` | Bar layout and indicator set, `idle.screensaver = 600` / `idle.lock = 900` (10 min / 15 min; Omarchy ships 150/300), Mullvad region |
+| `.config/omarchy/shell.json` | Bar layout and indicator set, `idle.screensaver = 300` / `idle.lock = 600` (5 min / 10 min; Omarchy ships 150/300), Mullvad region |
 | `.config/omarchy/shell.toml` | `[font] base-size = 12` |
 | `.config/omarchy/branding/screensaver.txt` | "GLASSPANE" in place of the stock omarchy wordmark, set in Press Start 2P — see [Machine notes](#machine-notes) for how it was generated |
 | `.config/omarchy/hooks/post-boot.d/gpu-rgb` | OpenRGB sets the GPU to the machine's warm gold; the only device `coolercontrold` cannot reach |
@@ -96,15 +96,18 @@ git commit -am "hypr: pin DP-1 to 144Hz"
 | `.config/starship.toml` | Full custom powerline prompt, replacing Omarchy's four-line default |
 | `.local/bin/portrait-dashboard` | Rebuilds the two-monitor window layout; replaces the Ubuntu-era `restore_desktop.sh` |
 | `.local/bin/screenshot-all-monitors` | `grim` with no `-g`, to capture the whole layout in one image |
+| `.local/bin/record-window-launch` | Records a newly launched window from frame zero by starting a full-monitor capture first, then cropping to the discovered window geometry; optional desktop audio |
+| `.local/bin/media-idle-inhibit` | Watches Firefox MPRIS playback state and enables Omarchy Stay Awake only while Firefox reports `Playing`; raw audio streams and Spotify are deliberately ignored |
+| `.config/systemd/user/media-idle-inhibit.service` | Runs the Firefox media idle helper with the graphical session and restarts it on failure |
 | `.config/rsnapshot/rsnapshot.conf` | Rolling hardlinked snapshots to the NAS. TAB-separated; `-rt` not `-a` because SMB cannot represent POSIX perms |
 | `.config/rsnapshot/excludes` | Build output, caches, re-fetchable bulk, and secrets — `*.pem`/`*.key`/`.env` are matched *inside* included trees |
 | `.local/bin/rsnapshot-interval` | Runs one rsnapshot interval under `flock` (rsnapshot has a single lockfile for all intervals) and treats "previous interval max not found" as success, since that only means the level below has not filled yet |
 | `.config/systemd/user/rsnapshot@.service` | Runs one rsnapshot interval; `OnFailure=` wires the notifier |
 | `.config/systemd/user/rsnapshot-failure@.service` | Desktop notification when a backup fails, so it is not silent |
-| `.config/systemd/user/rsnapshot-alpha.timer` | every 2h of uptime (`OnUnitActiveSec`), not wall-clock |
-| `.config/systemd/user/rsnapshot-beta.timer` | every 1d of uptime |
-| `.config/systemd/user/rsnapshot-gamma.timer` | every 1w of uptime |
-| `.config/systemd/user/rsnapshot-delta.timer` | every 30d of uptime |
+| `.config/systemd/user/rsnapshot-alpha.timer` | Every two wall-clock hours; `Persistent=true` catches one missed run after suspend or shutdown |
+| `.config/systemd/user/rsnapshot-beta.timer` | Daily at 03:20, persistent across downtime |
+| `.config/systemd/user/rsnapshot-gamma.timer` | Mondays at 03:40, persistent across downtime |
+| `.config/systemd/user/rsnapshot-delta.timer` | First day of each month at 04:00, persistent across downtime |
 | `.config/wireplumber/wireplumber.conf.d/50-audio-endpoints.conf` | Distinct nicks for the Scarlett's two physical inputs (both shipped as "Scarlett Solo USB", so the menu showed the same name twice); NVIDIA HDMI output disabled |
 | `.config/mise/config.toml` | CLI tooling installed through mise rather than pacman — **`hunkdiff` is pinned to 0.18.2**, see [Machine notes](#machine-notes) — `claude`, `codex`, `gh`, `hunkdiff`. These appear in **neither** `pacman-explicit.txt` nor `aur-explicit.txt`, so without this file they are recorded nowhere |
 | `.bashrc` | Restores GNU `ls` over Omarchy's eza alias (eza's `-s` breaks `ls -alstr`), repopulates `LS_COLORS`, moves eza to `ll`/`lla`/`llt`; sources `cargo/env` |
