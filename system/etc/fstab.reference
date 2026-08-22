@@ -27,8 +27,6 @@ UUID=3064C83664C80118 /mnt/windows ntfs3 rw,uid=1000,gid=1000,umask=022,windows_
 # Shared NTFS storage
 UUID=B6789A9C789A5AC7 /mnt/storage ntfs3 rw,uid=1000,gid=1000,umask=022,windows_names,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 0
 
-# Ubuntu root filesystem
-UUID=b928b8bb-aa69-4160-b976-5492ee4390f4 /mnt/ubuntu ext4 defaults,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
 
 # Synology NAS (blackbox) over SMB, for rsnapshot backups.
 # nounix/forceuid means POSIX permissions are NOT preserved -- rsnapshot uses
