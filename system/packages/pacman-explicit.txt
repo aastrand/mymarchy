@@ -50,6 +50,7 @@ git-filter-repo
 gnome-disk-utility
 gnome-keyring
 gnome-themes-extra
+gptfdisk
 gpu-screen-recorder
 grim
 gst-plugin-pipewire
@@ -103,6 +104,8 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 nss-mdns
+ntfs-3g
+ntfsprogs
 nvidia-open-dkms
 nvidia-utils
 obs-studio
